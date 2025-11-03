@@ -209,7 +209,7 @@ def validate_petrinet(net: PetriNet) -> bool:
 # Test với file PNML
 if __name__ == "__main__":
     # Thay đổi đường dẫn đến file PNML của bạn
-    pnml_file = "Piscine.pnml"
+    pnml_file = "Standard PNMLs/swimming_pool.pnml"
 
     print(f"Parsing file: {pnml_file}")
     petri_net = parse_pnml(pnml_file)
