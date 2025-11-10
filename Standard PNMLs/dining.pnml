@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pnml xmlns="http://www.pnml.org/version-2009/grammar/pnml">
+  <net id="DiningPhilosophers" type="P/T net">
+    <name>
+      <text>Dining Philosophers Problem</text>
+    </name>
+    <page id="main">
+      <!-- PHILOSOPHERS THINKING -->
+      <place id="p1">
+        <name>
+          <text>Phil1_Thinking</text>
+        </name>
+        <initialMarking>
+          <text>1</text>
+        </initialMarking>
+      </place>
+      <place id="p2">
+        <name>
+          <text>Phil2_Thinking</text>
+        </name>
+        <initialMarking>
+          <text>1</text>
+        </initialMarking>
+      </place>
+      <place id="p3">
+        <name>
+          <text>Phil3_Thinking</text>
+        </name>
+        <initialMarking>
+          <text>1</text>
+        </initialMarking>
+      </place>
+
+      <!-- PHILOSOPHERS EATING -->
+      <place id="p4">
+        <name>
+          <text>Phil1_Eating</text>
+        </name>
+      </place>
+      <place id="p5">
+        <name>
+          <text>Phil2_Eating</text>
+        </name>
+      </place>
+      <place id="p6">
+        <name>
+          <text>Phil3_Eating</text>
+        </name>
+      </place>
+
+      <!-- FORKS AVAILABLE -->
+      <place id="p7">
+        <name>
+          <text>Fork1</text>
+        </name>
+        <initialMarking>
+          <text>1</text>
+        </initialMarking>
+      </place>
+      <place id="p8">
+        <name>
+          <text>Fork2</text>
+        </name>
+        <initialMarking>
+          <text>1</text>
+        </initialMarking>
+      </place>
+      <place id="p9">
+        <name>
+          <text>Fork3</text>
+        </name>
+        <initialMarking>
+          <text>1</text>
+        </initialMarking>
+      </place>
+
+      <!-- TRANSITIONS: START EATING -->
+      <transition id="t1">
+        <name>
+          <text>Phil1_Start</text>
+        </name>
+      </transition>
+      <transition id="t2">
+        <name>
+          <text>Phil2_Start</text>
+        </name>
+      </transition>
+      <transition id="t3">
+        <name>
+          <text>Phil3_Start</text>
+        </name>
+      </transition>
+
+      <!-- TRANSITIONS: STOP EATING -->
+      <transition id="t4">
+        <name>
+          <text>Phil1_Stop</text>
+        </name>
+      </transition>
+      <transition id="t5">
+        <name>
+          <text>Phil2_Stop</text>
+        </name>
+      </transition>
+      <transition id="t6">
+        <name>
+          <text>Phil3_Stop</text>
+        </name>
+      </transition>
+
+      <!-- ARCS: START EATING -->
+      <!-- Philosopher 1 picks up forks 1 and 3 -->
+      <arc id="a1" source="p1" target="t1"/>
+      <arc id="a2" source="p7" target="t1"/>
+      <arc id="a3" source="p9" target="t1"/>
+      <arc id="a4" source="t1" target="p4"/>
+
+      <!-- Philosopher 2 picks up forks 1 and 2 -->
+      <arc id="a5" source="p2" target="t2"/>
+      <arc id="a6" source="p7" target="t2"/>
+      <arc id="a7" source="p8" target="t2"/>
+      <arc id="a8" source="t2" target="p5"/>
+
+      <!-- Philosopher 3 picks up forks 2 and 3 -->
+      <arc id="a9" source="p3" target="t3"/>
+      <arc id="a10" source="p8" target="t3"/>
+      <arc id="a11" source="p9" target="t3"/>
+      <arc id="a12" source="t3" target="p6"/>
+
+      <!-- ARCS: STOP EATING -->
+      <!-- Philosopher 1 returns forks 1 and 3 -->
+      <arc id="a13" source="p4" target="t4"/>
+      <arc id="a14" source="t4" target="p1"/>
+      <arc id="a15" source="t4" target="p7"/>
+      <arc id="a16" source="t4" target="p9"/>
+
+      <!-- Philosopher 2 returns forks 1 and 2 -->
+      <arc id="a17" source="p5" target="t5"/>
+      <arc id="a18" source="t5" target="p2"/>
+      <arc id="a19" source="t5" target="p7"/>
+      <arc id="a20" source="t5" target="p8"/>
+
+      <!-- Philosopher 3 returns forks 2 and 3 -->
+      <arc id="a21" source="p6" target="t6"/>
+      <arc id="a22" source="t6" target="p3"/>
+      <arc id="a23" source="t6" target="p8"/>
+      <arc id="a24" source="t6" target="p9"/>
+    </page>
+  </net>
+</pnml>
