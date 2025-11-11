@@ -1,0 +1,137 @@
+K 25
+svn:wc:ra_dav:version-url
+V 90
+/svn/research/ISOIEC-15909/!svn/ver/2360/Dev/www/PNML_org/public_html/version-2009/grammar
+END
+terms.rng
+K 25
+svn:wc:ra_dav:version-url
+V 100
+/svn/research/ISOIEC-15909/!svn/ver/1446/Dev/www/PNML_org/public_html/version-2009/grammar/terms.rng
+END
+partitions.rng
+K 25
+svn:wc:ra_dav:version-url
+V 105
+/svn/research/ISOIEC-15909/!svn/ver/1447/Dev/www/PNML_org/public_html/version-2009/grammar/partitions.rng
+END
+highlevelnet.pntd
+K 25
+svn:wc:ra_dav:version-url
+V 108
+/svn/research/ISOIEC-15909/!svn/ver/1453/Dev/www/PNML_org/public_html/version-2009/grammar/highlevelnet.pntd
+END
+hlcorestructure.rng
+K 25
+svn:wc:ra_dav:version-url
+V 110
+/svn/research/ISOIEC-15909/!svn/ver/1492/Dev/www/PNML_org/public_html/version-2009/grammar/hlcorestructure.rng
+END
+lists.rng
+K 25
+svn:wc:ra_dav:version-url
+V 100
+/svn/research/ISOIEC-15909/!svn/ver/1966/Dev/www/PNML_org/public_html/version-2009/grammar/lists.rng
+END
+cyclicenumerations.rng
+K 25
+svn:wc:ra_dav:version-url
+V 113
+/svn/research/ISOIEC-15909/!svn/ver/1436/Dev/www/PNML_org/public_html/version-2009/grammar/cyclicenumerations.rng
+END
+pnmlcoremodel.rng
+K 25
+svn:wc:ra_dav:version-url
+V 108
+/svn/research/ISOIEC-15909/!svn/ver/1492/Dev/www/PNML_org/public_html/version-2009/grammar/pnmlcoremodel.rng
+END
+anyElement.rng
+K 25
+svn:wc:ra_dav:version-url
+V 105
+/svn/research/ISOIEC-15909/!svn/ver/1504/Dev/www/PNML_org/public_html/version-2009/grammar/anyElement.rng
+END
+symmetricnet.pntd
+K 25
+svn:wc:ra_dav:version-url
+V 108
+/svn/research/ISOIEC-15909/!svn/ver/1492/Dev/www/PNML_org/public_html/version-2009/grammar/symmetricnet.pntd
+END
+booleans.rng
+K 25
+svn:wc:ra_dav:version-url
+V 103
+/svn/research/ISOIEC-15909/!svn/ver/1447/Dev/www/PNML_org/public_html/version-2009/grammar/booleans.rng
+END
+conventions.rng
+K 25
+svn:wc:ra_dav:version-url
+V 106
+/svn/research/ISOIEC-15909/!svn/ver/1413/Dev/www/PNML_org/public_html/version-2009/grammar/conventions.rng
+END
+finiteenumerations.rng
+K 25
+svn:wc:ra_dav:version-url
+V 113
+/svn/research/ISOIEC-15909/!svn/ver/1438/Dev/www/PNML_org/public_html/version-2009/grammar/finiteenumerations.rng
+END
+pt-hlpng.pntd
+K 25
+svn:wc:ra_dav:version-url
+V 104
+/svn/research/ISOIEC-15909/!svn/ver/2360/Dev/www/PNML_org/public_html/version-2009/grammar/pt-hlpng.pntd
+END
+ptnet.pntd
+K 25
+svn:wc:ra_dav:version-url
+V 101
+/svn/research/ISOIEC-15909/!svn/ver/1492/Dev/www/PNML_org/public_html/version-2009/grammar/ptnet.pntd
+END
+dots.rng
+K 25
+svn:wc:ra_dav:version-url
+V 99
+/svn/research/ISOIEC-15909/!svn/ver/1430/Dev/www/PNML_org/public_html/version-2009/grammar/dots.rng
+END
+pnmlcoremodel.pntd
+K 25
+svn:wc:ra_dav:version-url
+V 109
+/svn/research/ISOIEC-15909/!svn/ver/1417/Dev/www/PNML_org/public_html/version-2009/grammar/pnmlcoremodel.pntd
+END
+integers.rng
+K 25
+svn:wc:ra_dav:version-url
+V 103
+/svn/research/ISOIEC-15909/!svn/ver/1448/Dev/www/PNML_org/public_html/version-2009/grammar/integers.rng
+END
+pnmlextensions.rng
+K 25
+svn:wc:ra_dav:version-url
+V 109
+/svn/research/ISOIEC-15909/!svn/ver/1452/Dev/www/PNML_org/public_html/version-2009/grammar/pnmlextensions.rng
+END
+arbitrarydeclarations.rng
+K 25
+svn:wc:ra_dav:version-url
+V 116
+/svn/research/ISOIEC-15909/!svn/ver/1492/Dev/www/PNML_org/public_html/version-2009/grammar/arbitrarydeclarations.rng
+END
+multisets.rng
+K 25
+svn:wc:ra_dav:version-url
+V 104
+/svn/research/ISOIEC-15909/!svn/ver/1430/Dev/www/PNML_org/public_html/version-2009/grammar/multisets.rng
+END
+finiteintranges.rng
+K 25
+svn:wc:ra_dav:version-url
+V 110
+/svn/research/ISOIEC-15909/!svn/ver/1430/Dev/www/PNML_org/public_html/version-2009/grammar/finiteintranges.rng
+END
+strings.rng
+K 25
+svn:wc:ra_dav:version-url
+V 102
+/svn/research/ISOIEC-15909/!svn/ver/1447/Dev/www/PNML_org/public_html/version-2009/grammar/strings.rng
+END
