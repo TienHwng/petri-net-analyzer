@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <pnml xmlns="http://www.pnml.org/version-2009/grammar/pnml">
-  <net id="DiningPhilosophers" type="P/T net">
+  <net id="DiningPhilosophers" type="http://www.pnml.org/version-2009/grammar/ptnet">
     <name>
       <text>Dining Philosophers Problem</text>
     </name>
