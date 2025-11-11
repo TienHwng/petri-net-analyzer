@@ -1,0 +1,98 @@
+<?xml version="1.0" ?>
+<pnml xmlns="http://www.pnml.org/version-2009/grammar/pnml">
+    <net id="4e8312df-d88a-4ae8-9414-e7b0cecd74ce" type="http://www.pnml.org/version-2009/grammar/ptnet">
+        <name>
+            <text>Access_Policy_1safe</text>
+        </name>
+        <page id="1ad88ef7-9f79-4561-a398-03d51994eddc">
+            <place id="p_users">
+                <name>
+                    <text>Users</text>
+                </name>
+                <graphics>
+                    <position x="200" y="200"/>
+                </graphics>
+                <initialMarking>
+                    <text>1</text>
+                </initialMarking>
+            </place>
+            <place id="p_files">
+                <name>
+                    <text>Files</text>
+                </name>
+                <graphics>
+                    <position x="200" y="320"/>
+                </graphics>
+                <initialMarking>
+                    <text>1</text>
+                </initialMarking>
+            </place>
+            <place id="p_fba">
+                <name>
+                    <text>FilesBeingAccessed</text>
+                </name>
+                <graphics>
+                    <position x="600" y="260"/>
+                </graphics>
+            </place>
+            <place id="p_grant">
+                <name>
+                    <text>Grant</text>
+                </name>
+                <graphics>
+                    <position x="400" y="200"/>
+                </graphics>
+            </place>
+            <place id="p_access">
+                <name>
+                    <text>Access</text>
+                </name>
+                <graphics>
+                    <position x="800" y="260"/>
+                </graphics>
+            </place>
+            <transition id="t_request">
+                <name>
+                    <text>Request</text>
+                </name>
+                <graphics>
+                    <position x="300" y="260"/>
+                </graphics>
+            </transition>
+            <transition id="t_open">
+                <name>
+                    <text>OpenAccess</text>
+                </name>
+                <graphics>
+                    <position x="500" y="260"/>
+                </graphics>
+            </transition>
+            <transition id="t_close">
+                <name>
+                    <text>CloseAccess</text>
+                </name>
+                <graphics>
+                    <position x="700" y="260"/>
+                </graphics>
+            </transition>
+            <transition id="t_release">
+                <name>
+                    <text>Release</text>
+                </name>
+                <graphics>
+                    <position x="900" y="260"/>
+                </graphics>
+            </transition>
+            <arc id="2fc92cb9-3e82-4be8-a7c6-bdef80876df1" source="p_users" target="t_request"/>
+            <arc id="b33dbcae-bccb-49b9-8142-b6f6ccfd39d0" source="p_files" target="t_request"/>
+            <arc id="a72555fe-2438-4e9d-9a42-d26d6207a998" source="t_request" target="p_grant"/>
+            <arc id="272e3937-4105-4d91-8be7-c504a21e28ff" source="p_grant" target="t_open"/>
+            <arc id="88ca346c-d303-4007-aa23-2b27d0ab370d" source="p_files" target="t_open"/>
+            <arc id="337ec54d-92a5-42c3-99da-ff553fcfe751" source="t_open" target="p_fba"/>
+            <arc id="078f8b6f-feb5-40e7-9d59-b843ff39e389" source="p_fba" target="t_close"/>
+            <arc id="d6be2770-b3d3-445b-81f8-564cc9ceecf7" source="t_close" target="p_access"/>
+            <arc id="e334b961-858f-4076-85a3-c0b615181a94" source="p_access" target="t_release"/>
+            <arc id="96b30a49-b59f-4c1f-a093-1703d54fc3de" source="t_release" target="p_files"/>
+        </page>
+    </net>
+</pnml>

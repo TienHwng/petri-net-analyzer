@@ -1,0 +1,167 @@
+<?xml version="1.0" ?>
+<pnml xmlns="http://www.pnml.org/version-2009/grammar/pnml">
+    <net id="639b84c0-e70c-47c5-818a-b9c310d97157" type="http://www.pnml.org/version-2009/grammar/ptnet">
+        <name>
+            <text>Shared_Memory_1safe</text>
+        </name>
+        <page id="a7f5017a-9ff1-4a93-b6e2-b905a8e750ee">
+            <place id="p_active">
+                <name>
+                    <text>Active</text>
+                </name>
+                <graphics>
+                    <position x="200" y="200"/>
+                </graphics>
+                <initialMarking>
+                    <text>1</text>
+                </initialMarking>
+            </place>
+            <place id="p_queue">
+                <name>
+                    <text>Queue</text>
+                </name>
+                <graphics>
+                    <position x="200" y="320"/>
+                </graphics>
+            </place>
+            <place id="p_mem">
+                <name>
+                    <text>Memory</text>
+                </name>
+                <graphics>
+                    <position x="500" y="200"/>
+                </graphics>
+                <initialMarking>
+                    <text>1</text>
+                </initialMarking>
+            </place>
+            <place id="p_extbus">
+                <name>
+                    <text>Ext_Bus</text>
+                </name>
+                <graphics>
+                    <position x="500" y="320"/>
+                </graphics>
+                <initialMarking>
+                    <text>1</text>
+                </initialMarking>
+            </place>
+            <place id="p_bown">
+                <name>
+                    <text>Begin_Own_Acc</text>
+                </name>
+                <graphics>
+                    <position x="350" y="200"/>
+                </graphics>
+            </place>
+            <place id="p_eown">
+                <name>
+                    <text>End_Own_Acc</text>
+                </name>
+                <graphics>
+                    <position x="650" y="200"/>
+                </graphics>
+            </place>
+            <place id="p_bext">
+                <name>
+                    <text>Begin_Ext_Acc</text>
+                </name>
+                <graphics>
+                    <position x="350" y="320"/>
+                </graphics>
+            </place>
+            <place id="p_eext">
+                <name>
+                    <text>End_Ext_Acc</text>
+                </name>
+                <graphics>
+                    <position x="650" y="320"/>
+                </graphics>
+            </place>
+            <place id="p_req">
+                <name>
+                    <text>Req_Ext_Acc</text>
+                </name>
+                <graphics>
+                    <position x="200" y="440"/>
+                </graphics>
+            </place>
+            <place id="p_emem">
+                <name>
+                    <text>Ext_Mem_Acc</text>
+                </name>
+                <graphics>
+                    <position x="800" y="320"/>
+                </graphics>
+            </place>
+            <place id="p_omem">
+                <name>
+                    <text>OwnMemAcc</text>
+                </name>
+                <graphics>
+                    <position x="800" y="200"/>
+                </graphics>
+            </place>
+            <transition id="t_sown">
+                <name>
+                    <text>Start_Own</text>
+                </name>
+                <graphics>
+                    <position x="300" y="200"/>
+                </graphics>
+            </transition>
+            <transition id="t_fown">
+                <name>
+                    <text>Finish_Own</text>
+                </name>
+                <graphics>
+                    <position x="600" y="200"/>
+                </graphics>
+            </transition>
+            <transition id="t_req">
+                <name>
+                    <text>Request_Ext</text>
+                </name>
+                <graphics>
+                    <position x="250" y="380"/>
+                </graphics>
+            </transition>
+            <transition id="t_sext">
+                <name>
+                    <text>Start_Ext</text>
+                </name>
+                <graphics>
+                    <position x="300" y="320"/>
+                </graphics>
+            </transition>
+            <transition id="t_fext">
+                <name>
+                    <text>Finish_Ext</text>
+                </name>
+                <graphics>
+                    <position x="600" y="320"/>
+                </graphics>
+            </transition>
+            <arc id="586094ed-6dd2-4717-820d-ee085861658d" source="p_active" target="t_sown"/>
+            <arc id="ca69a2eb-e35d-40a3-a5f3-807410af9f51" source="p_mem" target="t_sown"/>
+            <arc id="d7a1b128-1e7f-4bae-a6a7-9d95e148d254" source="t_sown" target="p_bown"/>
+            <arc id="dd5730d1-821b-430c-97b8-60a7a240de4b" source="p_bown" target="t_fown"/>
+            <arc id="7c6d0836-7e51-4b82-9ebd-d73511ec7c5e" source="t_fown" target="p_omem"/>
+            <arc id="924f23b0-45b6-414f-a342-a929a7092e1b" source="p_omem" target="t_fown"/>
+            <arc id="d50cdee5-a968-4e6e-a7d9-1dda802d7d3c" source="t_fown" target="p_eown"/>
+            <arc id="ad689cea-f9a2-4aa0-8503-be484635bf54" source="t_fown" target="p_active"/>
+            <arc id="56932bf7-13a5-4f60-8d0f-a67816a00626" source="p_active" target="t_req"/>
+            <arc id="2dd06ddb-f367-4ec7-936c-14830898f4fb" source="t_req" target="p_queue"/>
+            <arc id="3749f57c-05e1-4769-a9cf-ac39c65c74fb" source="p_queue" target="t_sext"/>
+            <arc id="5ddc0bbe-ff58-4dc2-a328-d28d267fa4fd" source="p_extbus" target="t_sext"/>
+            <arc id="5f09456b-a445-458f-8596-597838112f62" source="p_mem" target="t_sext"/>
+            <arc id="cf9c067b-eb83-430f-a9bf-48e242029a13" source="t_sext" target="p_bext"/>
+            <arc id="8b9613d4-50c2-4ba6-96de-06015c8d1e64" source="p_bext" target="t_fext"/>
+            <arc id="9cf93275-5e99-4376-b9ae-70d493811241" source="t_fext" target="p_emem"/>
+            <arc id="e70a5fa6-6d02-49fa-9662-b5217279b957" source="p_emem" target="t_fext"/>
+            <arc id="a9b9a491-a304-4b4b-a8ba-611cdcaba40c" source="t_fext" target="p_eext"/>
+            <arc id="9b9d10ef-3e19-401c-8596-50305cd7b7aa" source="t_fext" target="p_active"/>
+            <arc id="bf623bc1-618c-46bc-bb53-6bc92aada70b" source="t_fext" target="p_extbus"/>
+        </page>
+    </net>
+</pnml>

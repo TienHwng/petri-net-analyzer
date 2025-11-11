@@ -1,0 +1,337 @@
+<?xml version="1.0" ?>
+<pnml xmlns="http://www.pnml.org/version-2009/grammar/pnml">
+    <net id="ee0e0c0b-42e7-4c10-9fe2-5012d81e848a" type="http://www.pnml.org/version-2009/grammar/ptnet">
+        <name>
+            <text>Token_Ring_1safe</text>
+        </name>
+        <page id="b739324b-398f-4088-8e1a-15c29c944278">
+            <place id="p_token">
+                <name>
+                    <text>Token</text>
+                </name>
+                <graphics>
+                    <position x="200" y="200"/>
+                </graphics>
+                <initialMarking>
+                    <text>1</text>
+                </initialMarking>
+            </place>
+            <place id="p_go">
+                <name>
+                    <text>Go</text>
+                </name>
+                <graphics>
+                    <position x="350" y="200"/>
+                </graphics>
+            </place>
+            <place id="p_relay">
+                <name>
+                    <text>Relay</text>
+                </name>
+                <graphics>
+                    <position x="500" y="200"/>
+                </graphics>
+            </place>
+            <place id="p_wait1">
+                <name>
+                    <text>Wait1</text>
+                </name>
+                <graphics>
+                    <position x="650" y="200"/>
+                </graphics>
+            </place>
+            <place id="p_wait2">
+                <name>
+                    <text>Wait2</text>
+                </name>
+                <graphics>
+                    <position x="800" y="200"/>
+                </graphics>
+            </place>
+            <place id="p_gorelay">
+                <name>
+                    <text>GoRelay</text>
+                </name>
+                <graphics>
+                    <position x="950" y="200"/>
+                </graphics>
+            </place>
+            <place id="p_outr">
+                <name>
+                    <text>OutR</text>
+                </name>
+                <graphics>
+                    <position x="1100" y="200"/>
+                </graphics>
+            </place>
+            <place id="p_incs">
+                <name>
+                    <text>InCS</text>
+                </name>
+                <graphics>
+                    <position x="1100" y="350"/>
+                </graphics>
+            </place>
+            <place id="p_inr">
+                <name>
+                    <text>InR</text>
+                </name>
+                <graphics>
+                    <position x="950" y="350"/>
+                </graphics>
+            </place>
+            <place id="p_preq">
+                <name>
+                    <text>PReq</text>
+                </name>
+                <graphics>
+                    <position x="800" y="350"/>
+                </graphics>
+            </place>
+            <place id="p_cs">
+                <name>
+                    <text>CS</text>
+                </name>
+                <graphics>
+                    <position x="650" y="350"/>
+                </graphics>
+            </place>
+            <place id="p_entercs">
+                <name>
+                    <text>EnterCS</text>
+                </name>
+                <graphics>
+                    <position x="500" y="350"/>
+                </graphics>
+            </place>
+            <place id="p_exitcs">
+                <name>
+                    <text>ExitCS</text>
+                </name>
+                <graphics>
+                    <position x="350" y="350"/>
+                </graphics>
+            </place>
+            <place id="p_idle">
+                <name>
+                    <text>Idle</text>
+                </name>
+                <graphics>
+                    <position x="200" y="350"/>
+                </graphics>
+            </place>
+            <place id="p_int">
+                <name>
+                    <text>InT</text>
+                </name>
+                <graphics>
+                    <position x="200" y="500"/>
+                </graphics>
+            </place>
+            <place id="p_csw">
+                <name>
+                    <text>CSW</text>
+                </name>
+                <graphics>
+                    <position x="350" y="500"/>
+                </graphics>
+            </place>
+            <place id="p_goidle">
+                <name>
+                    <text>GoIdle</text>
+                </name>
+                <graphics>
+                    <position x="500" y="500"/>
+                </graphics>
+            </place>
+            <place id="p_outt">
+                <name>
+                    <text>OutT</text>
+                </name>
+                <graphics>
+                    <position x="650" y="500"/>
+                </graphics>
+            </place>
+            <transition id="t_token_to_go">
+                <name>
+                    <text>Token_to_Go</text>
+                </name>
+                <graphics>
+                    <position x="275" y="200"/>
+                </graphics>
+            </transition>
+            <arc id="789d1763-e75f-4fd5-9eaf-4edcb221adb0" source="p_token" target="t_token_to_go"/>
+            <arc id="361f7641-7446-492b-b8bc-9ccbbb28bdf7" source="t_token_to_go" target="p_go"/>
+            <transition id="t_go_to_relay">
+                <name>
+                    <text>Go_to_Relay</text>
+                </name>
+                <graphics>
+                    <position x="425" y="200"/>
+                </graphics>
+            </transition>
+            <arc id="94856e14-4cc9-4a1c-a76f-c26f59de2edc" source="p_go" target="t_go_to_relay"/>
+            <arc id="c64de8eb-0b6d-4a43-8258-9642846d4826" source="t_go_to_relay" target="p_relay"/>
+            <transition id="t_relay_to_wait1">
+                <name>
+                    <text>Relay_to_Wait1</text>
+                </name>
+                <graphics>
+                    <position x="575" y="200"/>
+                </graphics>
+            </transition>
+            <arc id="e4c7b798-fe15-4ba4-a0e3-446a8f02c088" source="p_relay" target="t_relay_to_wait1"/>
+            <arc id="462f6d7d-2c1b-472e-b118-573e70b897b7" source="t_relay_to_wait1" target="p_wait1"/>
+            <transition id="t_wait1_to_wait2">
+                <name>
+                    <text>Wait1_to_Wait2</text>
+                </name>
+                <graphics>
+                    <position x="725" y="200"/>
+                </graphics>
+            </transition>
+            <arc id="7f32b90b-c063-4966-902c-4feadd6c2a76" source="p_wait1" target="t_wait1_to_wait2"/>
+            <arc id="1808daa2-a738-497d-af8c-2a6f3d8d7437" source="t_wait1_to_wait2" target="p_wait2"/>
+            <transition id="t_wait2_to_gorelay">
+                <name>
+                    <text>Wait2_to_GoRelay</text>
+                </name>
+                <graphics>
+                    <position x="875" y="200"/>
+                </graphics>
+            </transition>
+            <arc id="2409cd30-2409-48d6-88fa-5d5c11ba9f86" source="p_wait2" target="t_wait2_to_gorelay"/>
+            <arc id="cd8485be-26df-4c6f-9fd9-c57449d531ed" source="t_wait2_to_gorelay" target="p_gorelay"/>
+            <transition id="t_gorelay_to_outr">
+                <name>
+                    <text>GoRelay_to_OutR</text>
+                </name>
+                <graphics>
+                    <position x="1025" y="200"/>
+                </graphics>
+            </transition>
+            <arc id="9faa1418-df03-47c5-8307-8246ac899191" source="p_gorelay" target="t_gorelay_to_outr"/>
+            <arc id="279d5544-b31a-418c-88ae-b699c09c4e3c" source="t_gorelay_to_outr" target="p_outr"/>
+            <transition id="t_outr_to_incs">
+                <name>
+                    <text>OutR_to_InCS</text>
+                </name>
+                <graphics>
+                    <position x="1100" y="275"/>
+                </graphics>
+            </transition>
+            <arc id="04748ede-5e2d-411c-aa24-61a0634392c6" source="p_outr" target="t_outr_to_incs"/>
+            <arc id="a974cec9-8571-4354-9d6d-7050986a4b87" source="t_outr_to_incs" target="p_incs"/>
+            <transition id="t_incs_to_inr">
+                <name>
+                    <text>InCS_to_InR</text>
+                </name>
+                <graphics>
+                    <position x="1025" y="350"/>
+                </graphics>
+            </transition>
+            <arc id="cfa1c809-4f06-4a16-8473-4068ded34134" source="p_incs" target="t_incs_to_inr"/>
+            <arc id="ff4f20b0-c850-40ce-8d3f-c52d6f168c33" source="t_incs_to_inr" target="p_inr"/>
+            <transition id="t_inr_to_preq">
+                <name>
+                    <text>InR_to_PReq</text>
+                </name>
+                <graphics>
+                    <position x="875" y="350"/>
+                </graphics>
+            </transition>
+            <arc id="cd7ed616-b0ec-41ea-9ddc-070ac1909204" source="p_inr" target="t_inr_to_preq"/>
+            <arc id="699c1c43-a1e8-434a-8adf-bce19ab89e49" source="t_inr_to_preq" target="p_preq"/>
+            <transition id="t_preq_to_cs">
+                <name>
+                    <text>PReq_to_CS</text>
+                </name>
+                <graphics>
+                    <position x="725" y="350"/>
+                </graphics>
+            </transition>
+            <arc id="afbc5292-a4c7-41f9-96ec-55c5ba409348" source="p_preq" target="t_preq_to_cs"/>
+            <arc id="642e00bd-5467-4de4-b523-c2bfa70fdd60" source="t_preq_to_cs" target="p_cs"/>
+            <transition id="t_cs_to_entercs">
+                <name>
+                    <text>CS_to_EnterCS</text>
+                </name>
+                <graphics>
+                    <position x="575" y="350"/>
+                </graphics>
+            </transition>
+            <arc id="72fc7027-c696-44b3-845e-2a00547cdc7d" source="p_cs" target="t_cs_to_entercs"/>
+            <arc id="61c3fe84-6427-4755-9785-bf9c0510583d" source="t_cs_to_entercs" target="p_entercs"/>
+            <transition id="t_entercs_to_exitcs">
+                <name>
+                    <text>EnterCS_to_ExitCS</text>
+                </name>
+                <graphics>
+                    <position x="425" y="350"/>
+                </graphics>
+            </transition>
+            <arc id="b32eb71f-37a1-48ea-8bcf-5b5fcc9115f3" source="p_entercs" target="t_entercs_to_exitcs"/>
+            <arc id="d1a60c26-001c-46ab-91e9-0f8461856c03" source="t_entercs_to_exitcs" target="p_exitcs"/>
+            <transition id="t_exitcs_to_idle">
+                <name>
+                    <text>ExitCS_to_Idle</text>
+                </name>
+                <graphics>
+                    <position x="275" y="350"/>
+                </graphics>
+            </transition>
+            <arc id="02f92e69-a5b4-4cd1-8b64-9c2094d9a19d" source="p_exitcs" target="t_exitcs_to_idle"/>
+            <arc id="2633119a-912b-47b3-a533-d451f51c4b22" source="t_exitcs_to_idle" target="p_idle"/>
+            <transition id="t_idle_to_int">
+                <name>
+                    <text>Idle_to_InT</text>
+                </name>
+                <graphics>
+                    <position x="200" y="425"/>
+                </graphics>
+            </transition>
+            <arc id="7baca4ba-428e-44f3-b27e-6c23b438fac4" source="p_idle" target="t_idle_to_int"/>
+            <arc id="9b4d2bce-27de-40da-9ceb-c2dbc3c90f7b" source="t_idle_to_int" target="p_int"/>
+            <transition id="t_int_to_csw">
+                <name>
+                    <text>InT_to_CSW</text>
+                </name>
+                <graphics>
+                    <position x="275" y="500"/>
+                </graphics>
+            </transition>
+            <arc id="23eb369c-4e6c-4bea-a0e7-9c5945545d13" source="p_int" target="t_int_to_csw"/>
+            <arc id="c5560be4-5205-4790-b77f-98f1b8ec8f7a" source="t_int_to_csw" target="p_csw"/>
+            <transition id="t_csw_to_goidle">
+                <name>
+                    <text>CSW_to_GoIdle</text>
+                </name>
+                <graphics>
+                    <position x="425" y="500"/>
+                </graphics>
+            </transition>
+            <arc id="3abe003a-e3b2-41b1-9af0-748e3daa8303" source="p_csw" target="t_csw_to_goidle"/>
+            <arc id="11031230-5fcb-471d-8cab-f5fa7f09fb76" source="t_csw_to_goidle" target="p_goidle"/>
+            <transition id="t_goidle_to_outt">
+                <name>
+                    <text>GoIdle_to_OutT</text>
+                </name>
+                <graphics>
+                    <position x="575" y="500"/>
+                </graphics>
+            </transition>
+            <arc id="66ea50b0-c2f5-4529-ba28-4fbfd861690c" source="p_goidle" target="t_goidle_to_outt"/>
+            <arc id="ed977f0f-f59b-426f-a8ec-697668014ad3" source="t_goidle_to_outt" target="p_outt"/>
+            <transition id="t_outt_to_token">
+                <name>
+                    <text>OutT_to_Token</text>
+                </name>
+                <graphics>
+                    <position x="425" y="350"/>
+                </graphics>
+            </transition>
+            <arc id="feb6d7e3-6d23-4e70-9f16-a49bf74ebb97" source="p_outt" target="t_outt_to_token"/>
+            <arc id="91eafccc-15df-4802-9a1c-c8b78cee5980" source="t_outt_to_token" target="p_token"/>
+        </page>
+    </net>
+</pnml>
