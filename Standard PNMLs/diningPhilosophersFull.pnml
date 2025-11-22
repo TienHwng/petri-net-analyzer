@@ -4,44 +4,44 @@
 		<name><text>Dining Philosophers Problem (6)</text></name>
 		<page id="main">
 			<!-- PHILOSOPHERS THINKING -->
-			<place id="p1"><name><text>Phil1_Thinking</text></name><initialMarking><text>1</text></initialMarking></place>
-			<place id="p2"><name><text>Phil2_Thinking</text></name><initialMarking><text>1</text></initialMarking></place>
-			<place id="p3"><name><text>Phil3_Thinking</text></name><initialMarking><text>1</text></initialMarking></place>
-			<place id="p4"><name><text>Phil4_Thinking</text></name><initialMarking><text>1</text></initialMarking></place>
-			<place id="p5"><name><text>Phil5_Thinking</text></name><initialMarking><text>1</text></initialMarking></place>
-			<place id="p6"><name><text>Phil6_Thinking</text></name><initialMarking><text>1</text></initialMarking></place>
+			<place id="p1">		<name><text>Phil1_Thinking</text></name>	<initialMarking><text>1</text></initialMarking></place>
+			<place id="p2">		<name><text>Phil2_Thinking</text></name>	<initialMarking><text>1</text></initialMarking></place>
+			<place id="p3">		<name><text>Phil3_Thinking</text></name>	<initialMarking><text>1</text></initialMarking></place>
+			<place id="p4">		<name><text>Phil4_Thinking</text></name>	<initialMarking><text>1</text></initialMarking></place>
+			<place id="p5">		<name><text>Phil5_Thinking</text></name>	<initialMarking><text>1</text></initialMarking></place>
+			<place id="p6">		<name><text>Phil6_Thinking</text></name>	<initialMarking><text>1</text></initialMarking></place>
 
 			<!-- PHILOSOPHERS EATING -->
-			<place id="p7"><name><text>Phil1_Eating</text></name></place>
-			<place id="p8"><name><text>Phil2_Eating</text></name></place>
-			<place id="p9"><name><text>Phil3_Eating</text></name></place>
-			<place id="p10"><name><text>Phil4_Eating</text></name></place>
-			<place id="p11"><name><text>Phil5_Eating</text></name></place>
-			<place id="p12"><name><text>Phil6_Eating</text></name></place>
+			<place id="p7">		<name><text>Phil1_Eating</text></name></place>
+			<place id="p8">		<name><text>Phil2_Eating</text></name></place>
+			<place id="p9">		<name><text>Phil3_Eating</text></name></place>
+			<place id="p10">	<name><text>Phil4_Eating</text></name></place>
+			<place id="p11">	<name><text>Phil5_Eating</text></name></place>
+			<place id="p12">	<name><text>Phil6_Eating</text></name></place>
 
 			<!-- FORKS AVAILABLE -->
-			<place id="p13"><name><text>Fork1</text></name><initialMarking><text>1</text></initialMarking></place>
-			<place id="p14"><name><text>Fork2</text></name><initialMarking><text>1</text></initialMarking></place>
-			<place id="p15"><name><text>Fork3</text></name><initialMarking><text>1</text></initialMarking></place>
-			<place id="p16"><name><text>Fork4</text></name><initialMarking><text>1</text></initialMarking></place>
-			<place id="p17"><name><text>Fork5</text></name><initialMarking><text>1</text></initialMarking></place>
-			<place id="p18"><name><text>Fork6</text></name><initialMarking><text>1</text></initialMarking></place>
+			<place id="p13">	<name><text>Fork1</text></name>		<initialMarking><text>1</text></initialMarking></place>
+			<place id="p14">	<name><text>Fork2</text></name>		<initialMarking><text>1</text></initialMarking></place>
+			<place id="p15">	<name><text>Fork3</text></name>		<initialMarking><text>1</text></initialMarking></place>
+			<place id="p16">	<name><text>Fork4</text></name>		<initialMarking><text>1</text></initialMarking></place>
+			<place id="p17">	<name><text>Fork5</text></name>		<initialMarking><text>1</text></initialMarking></place>
+			<place id="p18">	<name><text>Fork6</text></name>		<initialMarking><text>1</text></initialMarking></place>
 
 			<!-- TRANSITIONS: START EATING -->
-			<transition id="t1"><name><text>Phil1_Start</text></name></transition>
-			<transition id="t2"><name><text>Phil2_Start</text></name></transition>
-			<transition id="t3"><name><text>Phil3_Start</text></name></transition>
-			<transition id="t4"><name><text>Phil4_Start</text></name></transition>
-			<transition id="t5"><name><text>Phil5_Start</text></name></transition>
-			<transition id="t6"><name><text>Phil6_Start</text></name></transition>
+			<transition id="t1">	<name><text>Phil1_Start</text></name></transition>
+			<transition id="t2">	<name><text>Phil2_Start</text></name></transition>
+			<transition id="t3">	<name><text>Phil3_Start</text></name></transition>
+			<transition id="t4">	<name><text>Phil4_Start</text></name></transition>
+			<transition id="t5">	<name><text>Phil5_Start</text></name></transition>
+			<transition id="t6">	<name><text>Phil6_Start</text></name></transition>
 
 			<!-- TRANSITIONS: STOP EATING -->
-			<transition id="t7"><name><text>Phil1_Stop</text></name></transition>
-			<transition id="t8"><name><text>Phil2_Stop</text></name></transition>
-			<transition id="t9"><name><text>Phil3_Stop</text></name></transition>
-			<transition id="t10"><name><text>Phil4_Stop</text></name></transition>
-			<transition id="t11"><name><text>Phil5_Stop</text></name></transition>
-			<transition id="t12"><name><text>Phil6_Stop</text></name></transition>
+			<transition id="t7">	<name><text>Phil1_Stop</text></name></transition>
+			<transition id="t8">	<name><text>Phil2_Stop</text></name></transition>
+			<transition id="t9">	<name><text>Phil3_Stop</text></name></transition>
+			<transition id="t10">	<name><text>Phil4_Stop</text></name></transition>
+			<transition id="t11">	<name><text>Phil5_Stop</text></name></transition>
+			<transition id="t12">	<name><text>Phil6_Stop</text></name></transition>
 
 			<!-- ARCS: START EATING -->
 			<!-- Philosopher 1 picks up forks 1 and 6 -->
