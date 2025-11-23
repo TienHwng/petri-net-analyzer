@@ -423,7 +423,7 @@ def main():
         description="Universal Reachability Analyzer (auto-grouped, color-coded BFS/DFS) for 1-safe Petri Nets"
     )
     parser.add_argument(
-        "--model", type=str, default="../Standard PNMLs/diningPhilosophers.pnml",
+        "--model", type=str, default="F:/MM-251-Assignment/Standard PNMLs/diningPhilosophers.pnml",
         help="Path to PNML file (relative or absolute)"
     )
     parser.add_argument(

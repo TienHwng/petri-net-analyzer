@@ -142,7 +142,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--model",
         type=str,
-        default="../Standard PNMLs/diningPhilosophers.pnml",
+        default="F:/MM-251-Assignment/Standard PNMLs/diningPhilosophers.pnml",
         help="Path to PNML model file",
     )
     args = parser.parse_args()
