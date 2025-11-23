@@ -6,4 +6,4 @@ source/__pycache__/
 .venv/
 
 # LaTeX Folder
-# latex/
+latex/
