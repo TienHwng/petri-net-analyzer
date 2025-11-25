@@ -5,235 +5,65 @@
             <text>Cabines_Piscine_1safe</text>
         </name>
         <page id="1eba0457-bf28-4bd0-8dbd-7d3e8f2e9586">
-            <place id="p_entree">
-                <name>
-                    <text>Entree</text>
-                </name>
-                <graphics>
-                    <position x="200" y="300"/>
-                </graphics>
-                <initialMarking>
-                    <text>1</text>
-                </initialMarking>
-            </place>
-            <place id="p_attente">
-                <name>
-                    <text>Attente_P</text>
-                </name>
-                <graphics>
-                    <position x="350" y="300"/>
-                </graphics>
-            </place>
-            <place id="p_panierp">
-                <name>
-                    <text>P_Panier</text>
-                </name>
-                <graphics>
-                    <position x="350" y="430"/>
-                </graphics>
-                <initialMarking>
-                    <text>1</text>
-                </initialMarking>
-            </place>
-            <place id="p_rpanier">
-                <name>
-                    <text>R_Panier</text>
-                </name>
-                <graphics>
-                    <position x="700" y="430"/>
-                </graphics>
-            </place>
-            <place id="p_cle1">
-                <name>
-                    <text>P_Cle1</text>
-                </name>
-                <graphics>
-                    <position x="350" y="520"/>
-                </graphics>
-                <initialMarking>
-                    <text>1</text>
-                </initialMarking>
-            </place>
-            <place id="p_cle2">
-                <name>
-                    <text>P_Cle2</text>
-                </name>
-                <graphics>
-                    <position x="350" y="610"/>
-                </graphics>
-                <initialMarking>
-                    <text>1</text>
-                </initialMarking>
-            </place>
-            <place id="p_rcles">
-                <name>
-                    <text>R_Cles</text>
-                </name>
-                <graphics>
-                    <position x="700" y="565"/>
-                </graphics>
-            </place>
-            <place id="p_cabines">
-                <name>
-                    <text>Cabines</text>
-                </name>
-                <graphics>
-                    <position x="500" y="300"/>
-                </graphics>
-            </place>
-            <place id="p_hab">
-                <name>
-                    <text>Habillage</text>
-                </name>
-                <graphics>
-                    <position x="500" y="200"/>
-                </graphics>
-            </place>
-            <place id="p_deshab">
-                <name>
-                    <text>Deshabillage</text>
-                </name>
-                <graphics>
-                    <position x="850" y="200"/>
-                </graphics>
-            </place>
-            <place id="p_entrPisc">
-                <name>
-                    <text>Entrer_Piscine</text>
-                </name>
-                <graphics>
-                    <position x="650" y="300"/>
-                </graphics>
-            </place>
-            <place id="p_pisc">
-                <name>
-                    <text>Piscine</text>
-                </name>
-                <graphics>
-                    <position x="800" y="300"/>
-                </graphics>
-            </place>
-            <place id="p_baign">
-                <name>
-                    <text>Baignade</text>
-                </name>
-                <graphics>
-                    <position x="950" y="300"/>
-                </graphics>
-            </place>
-            <place id="p_sortie">
-                <name>
-                    <text>Sortie</text>
-                </name>
-                <graphics>
-                    <position x="1050" y="300"/>
-                </graphics>
-            </place>
-            <place id="p_fini">
-                <name>
-                    <text>Fini</text>
-                </name>
-                <graphics>
-                    <position x="1200" y="300"/>
-                </graphics>
-            </place>
-            <transition id="t_enterQ">
-                <name>
-                    <text>EnterQueue</text>
-                </name>
-                <graphics>
-                    <position x="275" y="300"/>
-                </graphics>
-            </transition>
-            <transition id="t_takeRes">
-                <name>
-                    <text>TakePanierAndKey1</text>
-                </name>
-                <graphics>
-                    <position x="425" y="400"/>
-                </graphics>
-            </transition>
-            <transition id="t_takeRes2">
-                <name>
-                    <text>TakePanierAndKey2</text>
-                </name>
-                <graphics>
-                    <position x="425" y="520"/>
-                </graphics>
-            </transition>
-            <transition id="t_dress">
-                <name>
-                    <text>Dressing</text>
-                </name>
-                <graphics>
-                    <position x="500" y="250"/>
-                </graphics>
-            </transition>
-            <transition id="t_toPool">
-                <name>
-                    <text>EnterPool</text>
-                </name>
-                <graphics>
-                    <position x="575" y="300"/>
-                </graphics>
-            </transition>
-            <transition id="t_swim">
-                <name>
-                    <text>Swim</text>
-                </name>
-                <graphics>
-                    <position x="875" y="300"/>
-                </graphics>
-            </transition>
-            <transition id="t_undress">
-                <name>
-                    <text>Undressing</text>
-                </name>
-                <graphics>
-                    <position x="875" y="250"/>
-                </graphics>
-            </transition>
-            <transition id="t_return">
-                <name>
-                    <text>ReturnResources</text>
-                </name>
-                <graphics>
-                    <position x="775" y="500"/>
-                </graphics>
-            </transition>
-            <transition id="t_exit">
-                <name>
-                    <text>Exit</text>
-                </name>
-                <graphics>
-                    <position x="1125" y="300"/>
-                </graphics>
-            </transition>
-            <arc id="2d85ed16-d07a-4200-a502-f07388958c2a" source="p_entree" target="t_enterQ"/>
-            <arc id="fed93060-287c-427d-8e9f-e7ca29884c12" source="t_enterQ" target="p_attente"/>
-            <arc id="acf42ea3-3b4d-4c47-b3be-c196bd7b2070" source="p_attente" target="t_takeRes"/>
-            <arc id="9da5ea3f-5a2c-4c2d-baed-124ec1393021" source="p_panierp" target="t_takeRes"/>
-            <arc id="f0e9a3dd-4b4d-4ea6-82c6-b6585619494f" source="p_cle1" target="t_takeRes"/>
-            <arc id="4f7187b2-78db-43ca-b238-dcc64ddd13a3" source="t_takeRes" target="p_cabines"/>
-            <arc id="1f5f2f00-4d19-43da-95c5-26325c4637e7" source="p_attente" target="t_takeRes2"/>
-            <arc id="387108da-fe5a-4b22-a4c3-0ec8fb39e615" source="p_panierp" target="t_takeRes2"/>
-            <arc id="e2e58f05-c194-4056-b6be-cb39655246db" source="p_cle2" target="t_takeRes2"/>
-            <arc id="f77caff1-c855-41bc-bbfb-ec01452eb543" source="t_takeRes2" target="p_cabines"/>
-            <arc id="8e0bfb92-6c7a-47c2-98a7-fef5eeb3f15d" source="p_cabines" target="t_dress"/>
-            <arc id="43393091-6bd0-4c9f-9bd0-6da4157455e4" source="t_dress" target="p_hab"/>
-            <arc id="847f3483-ce40-4059-ab30-f66dc83cd3f6" source="p_hab" target="t_toPool"/>
-            <arc id="c7c7520c-7eba-4264-9c3e-dad1bfb70443" source="t_toPool" target="p_entrPisc"/>
-            <arc id="6caec602-d755-4120-9524-e88c9787a3dc" source="p_entrPisc" target="t_swim"/>
-            <arc id="53056470-6bd1-4d05-88e7-d541ba3b1c7d" source="t_swim" target="p_baign"/>
-            <arc id="4550ac2f-4c3c-4f86-b9fa-a55ee26f05b8" source="p_baign" target="t_undress"/>
-            <arc id="882d903c-8746-4942-b5a9-4d77ca85d74b" source="t_undress" target="p_deshab"/>
-            <arc id="95c89732-4ac1-48e3-b33a-38ccb51885eb" source="p_deshab" target="t_return"/>
-            <arc id="817f5d40-db0e-4168-b9a9-6429b984c4b9" source="t_return" target="p_rpanier"/>
-            <arc id="5d84009a-6b25-4009-b3f4-2cda1b29bfd1" source="t_return" target="p_rcles"/>
-            <arc id="4ed44664-9c6e-4ba9-bc69-dd7822013738" source="p_rpanier" target="t_exit"/>
-            <arc id="1396014a-e50f-4adb-87b3-6fec45c37ba4" source="p_rcles" target="t_exit"/>
-            <arc id="0a4279a4-a4ec-4f37-8c7f-48ff80b3d298" source="t_exit" target="p_sortie"/>
-            <arc id="81a6eb1a-e977-4e3d-912b-3c97f021a26f" source="t_exit" target="p_fini"/>
+            <place id="p_entree">   <name><text>Entree</text></name>         <graphics><position x="200" y="300"/></graphics>    <initialMarking><text>1</text></initialMarking></place>
+            <place id="p_panierp">  <name><text>P_Panier</text></name>       <graphics><position x="350" y="430"/></graphics>    <initialMarking><text>1</text></initialMarking></place>
+            <place id="p_cle1">     <name><text>P_Cle1</text></name>         <graphics><position x="350" y="520"/></graphics>    <initialMarking><text>1</text></initialMarking></place>
+            <place id="p_cle2">     <name><text>P_Cle2</text></name>         <graphics><position x="350" y="610"/></graphics>    <initialMarking><text>1</text></initialMarking></place>
+            <place id="p_attente">  <name><text>Attente_P</text></name>      <graphics><position x="350" y="300"/></graphics></place>
+            <place id="p_rpanier">  <name><text>R_Panier</text></name>       <graphics><position x="700" y="430"/></graphics></place>
+            <place id="p_rcles">    <name><text>R_Cles</text></name>         <graphics><position x="700" y="565"/></graphics></place>
+            <place id="p_cabines">  <name><text>Cabines</text></name>        <graphics><position x="500" y="300"/></graphics></place>
+            <place id="p_hab">      <name><text>Habillage</text></name>      <graphics><position x="500" y="200"/></graphics></place>
+            <place id="p_deshab">   <name><text>Deshabillage</text></name>   <graphics><position x="850" y="200"/></graphics></place>
+            <place id="p_entrPisc"> <name><text>Entrer_Piscine</text></name> <graphics><position x="650" y="300"/></graphics></place>
+            <place id="p_pisc">     <name><text>Piscine</text></name>        <graphics><position x="800" y="300"/></graphics></place>
+            <place id="p_baign">    <name><text>Baignade</text></name>       <graphics><position x="950" y="300"/></graphics></place>
+            <place id="p_sortie">   <name><text>Sortie</text></name>         <graphics><position x="1050" y="300"/></graphics></place>
+            <place id="p_fini">     <name><text>Fini</text></name>           <graphics><position x="1200" y="300"/></graphics></place>
+
+            <transition id="t_enterQ">      <name><text>EnterQueue</text></name>        <graphics><position x="275" y="300"/></graphics></transition>
+            <transition id="t_takeRes">     <name><text>TakePanierAndKey1</text></name> <graphics><position x="425" y="400"/></graphics></transition>
+            <transition id="t_takeRes2">    <name><text>TakePanierAndKey2</text></name> <graphics><position x="425" y="520"/></graphics></transition>
+            <transition id="t_dress">       <name><text>Dressing</text></name>          <graphics><position x="500" y="250"/></graphics></transition>
+            <transition id="t_toPool">      <name><text>EnterPool</text></name>         <graphics><position x="575" y="300"/></graphics></transition>
+            <transition id="t_swim">        <name><text>Swim</text></name>              <graphics><position x="875" y="300"/></graphics></transition>
+            <transition id="t_undress">     <name><text>Undressing</text></name>        <graphics><position x="875" y="250"/></graphics></transition>
+            <transition id="t_return">      <name><text>ReturnResources</text></name>   <graphics><position x="775" y="500"/></graphics></transition>
+            <transition id="t_exit">        <name><text>Exit</text></name>              <graphics><position x="1125" y="300"/></graphics></transition>
+
+            <arc id="2d85ed16-d07a-4200-a502-f07388958c2a" source="p_entree"    target="t_enterQ"/>
+            <arc id="fed93060-287c-427d-8e9f-e7ca29884c12" source="t_enterQ"    target="p_attente"/>
+
+            <arc id="acf42ea3-3b4d-4c47-b3be-c196bd7b2070" source="p_attente"   target="t_takeRes"/>
+            <arc id="9da5ea3f-5a2c-4c2d-baed-124ec1393021" source="p_panierp"   target="t_takeRes"/>
+            <arc id="f0e9a3dd-4b4d-4ea6-82c6-b6585619494f" source="p_cle1"      target="t_takeRes"/>
+            <arc id="4f7187b2-78db-43ca-b238-dcc64ddd13a3" source="t_takeRes"   target="p_cabines"/>
+
+            <arc id="1f5f2f00-4d19-43da-95c5-26325c4637e7" source="p_attente"   target="t_takeRes2"/>
+            <arc id="387108da-fe5a-4b22-a4c3-0ec8fb39e615" source="p_panierp"   target="t_takeRes2"/>
+            <arc id="e2e58f05-c194-4056-b6be-cb39655246db" source="p_cle2"      target="t_takeRes2"/>
+            <arc id="f77caff1-c855-41bc-bbfb-ec01452eb543" source="t_takeRes2"  target="p_cabines"/>
+
+            <arc id="8e0bfb92-6c7a-47c2-98a7-fef5eeb3f15d" source="p_cabines"   target="t_dress"/>
+            <arc id="43393091-6bd0-4c9f-9bd0-6da4157455e4" source="t_dress"     target="p_hab"/>
+
+            <arc id="847f3483-ce40-4059-ab30-f66dc83cd3f6" source="p_hab"       target="t_toPool"/>
+            <arc id="c7c7520c-7eba-4264-9c3e-dad1bfb70443" source="t_toPool"    target="p_entrPisc"/>
+
+            <arc id="6caec602-d755-4120-9524-e88c9787a3dc" source="p_entrPisc"  target="t_swim"/>
+            <arc id="53056470-6bd1-4d05-88e7-d541ba3b1c7d" source="t_swim"      target="p_baign"/>
+
+            <arc id="4550ac2f-4c3c-4f86-b9fa-a55ee26f05b8" source="p_baign"     target="t_undress"/>
+            <arc id="882d903c-8746-4942-b5a9-4d77ca85d74b" source="t_undress"   target="p_deshab"/>
+
+            <arc id="95c89732-4ac1-48e3-b33a-38ccb51885eb" source="p_deshab"    target="t_return"/>
+            <arc id="817f5d40-db0e-4168-b9a9-6429b984c4b9" source="t_return"    target="p_rpanier"/>
+            <arc id="5d84009a-6b25-4009-b3f4-2cda1b29bfd1" source="t_return"    target="p_rcles"/>
+            
+            <arc id="4ed44664-9c6e-4ba9-bc69-dd7822013738" source="p_rpanier"   target="t_exit"/>
+            <arc id="1396014a-e50f-4adb-87b3-6fec45c37ba4" source="p_rcles"     target="t_exit"/>
+            <arc id="0a4279a4-a4ec-4f37-8c7f-48ff80b3d298" source="t_exit"      target="p_sortie"/>
+            <arc id="81a6eb1a-e977-4e3d-912b-3c97f021a26f" source="t_exit"      target="p_fini"/>
         </page>
     </net>
 </pnml>
