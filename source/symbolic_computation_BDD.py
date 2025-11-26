@@ -78,7 +78,7 @@ def existential_quantify(bdd: BDD, f, vars_to_elim):
 def rename_next_to_curr(bdd: BDD, f, place_order):
     """Rename next-state vars p' -> current vars p."""
     subs = {f"{p}'": bdd.var(p) for p in place_order}
-    return f.let(subs)
+    return bdd.let(subs, f)
 
 
 # =============================================================
@@ -115,7 +115,7 @@ def symbolic_reachability(net: PetriNet):
     tracemalloc.stop()
 
     print(f"Iterations until fixpoint: {iteration}")
-    print(f"BDD size (#nodes): {bdd.size(Reach)}")
+    print(f"BDD size (#nodes): {len(Reach)}")
     print(f"Elapsed time: {elapsed:.4f} s")
     print(f"Peak memory: {peak_mem:.2f} MB")
 
@@ -125,8 +125,8 @@ def symbolic_reachability(net: PetriNet):
         print(f"Total reachable markings (estimated): {int(count)}")
     except Exception:
         print("BDD count() not available on this backend.")
-
-    return Reach
+    curr_vars_map = {p: f"{p}" for p in place_order}
+    return Reach, bdd, curr_vars_map
 
 
 # =============================================================
@@ -142,7 +142,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--model",
         type=str,
-        default="F:/MM-251-Assignment/Standard PNMLs/diningPhilosophers.pnml",
+        default="../Standard PNMLs/diningPhilosophers.pnml",
         help="Path to PNML model file",
     )
     args = parser.parse_args()
