@@ -4,7 +4,9 @@ source/__pycache__/
 
 # Python virtual environments
 .venv/
+.venv310/
+.venv313/
 
 # LaTeX Folder
 latex/
-latex2/
+latex template/
