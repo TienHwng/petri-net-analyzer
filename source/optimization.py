@@ -29,7 +29,7 @@ except ImportError as e:
 
 
 # =============================================================
-# 1. HELPER: TRULY AGNOSTIC WEIGHT ASSIGNMENT
+# 1. HELPER: WEIGHT ASSIGNMENT (AUTO & MANUAL)
 # =============================================================
 def auto_assign_weights(net: PetriNet) -> Dict[str, int]:
     """
@@ -66,6 +66,50 @@ def auto_assign_weights(net: PetriNet) -> Dict[str, int]:
             p_name = net.places[pid].name
             if p_name not in weights:
                 weights[p_name] = current_weight
+
+    return weights
+
+
+def parse_manual_weights(net: PetriNet, weight_str: str) -> Dict[str, int]:
+    """
+    Parses a string like 'p1=10, p2=5' into a dictionary.
+    Validates that place names exist in the net.
+    """
+    weights = {}
+    if not weight_str:
+        return weights
+
+    # Build a set of valid place names for validation
+    valid_names = {p.name for p in net.places.values()}
+
+    print(f"{Color.CYAN}--- Manual Weight Assignment ---{Color.RESET}")
+    entries = weight_str.split(",")
+
+    for entry in entries:
+        if "=" not in entry:
+            print(
+                f"   {Color.RED}⚠️ Warning: Ignoring invalid format '{entry}'. Expected 'Name=Value'.{Color.RESET}"
+            )
+            continue
+
+        p_name, val_str = entry.split("=", 1)
+        p_name = p_name.strip()
+        val_str = val_str.strip()
+
+        if p_name not in valid_names:
+            print(
+                f"   {Color.RED}⚠️ Warning: Place '{p_name}' not found in Petri Net. Ignoring.{Color.RESET}"
+            )
+            continue
+
+        try:
+            val = int(val_str)
+            weights[p_name] = val
+            print(f"   Place '{p_name}' -> Assigned Weight: {val}")
+        except ValueError:
+            print(
+                f"   {Color.RED}⚠️ Warning: Invalid weight '{val_str}' for '{p_name}'. Expected integer.{Color.RESET}"
+            )
 
     return weights
 
@@ -191,12 +235,10 @@ def extract_best_solutions(
     results = []
 
     # --- Try Low Branch ---
-    # Need to check if Low branch was part of the optimal solution
     val_low = 0 if low == 1 else memo.get(low, -float("inf"))
 
     if val_low != -float("inf"):
         gain_gap = suffix_gap[lvl + 1] - suffix_gap[lvl_low]
-        # If going low + gap gain yields the target score, this branch is optimal
         if (val_low + gain_gap) == target:
             path[var_name] = 0
             results.extend(
@@ -210,7 +252,6 @@ def extract_best_solutions(
     if val_high != -float("inf"):
         w_u = level_weights[lvl]
         gain_gap = suffix_gap[lvl + 1] - suffix_gap[lvl_high]
-        # If going high + weight + gap gain yields target score, this branch is optimal
         if (val_high + w_u + gain_gap) == target:
             path[var_name] = 1
             results.extend(
@@ -229,32 +270,26 @@ def solve_optimization_symbolic(
     # 1. Prepare Weight Arrays for O(1) access
     # BDD variables are interleaved (x_0, xp_0, x_1...).
     # We map 'x_p' levels to weights, 'xp_p' levels to 0.
-    limit = len(bdd_mgr.var2level)  # Total variables (limit level is for True/False)
+    limit = len(bdd_mgr.var2level)
     level_weights = [0] * limit
 
     # Map variable names to levels and fill weights
     for var, lvl in bdd_mgr.var2level.items():
-        # Check if it is a state variable 'x_' (not 'xp_')
         if var.startswith("x_") and not var.startswith("xp_"):
-            # Extract real name: x_PlaceID -> PlaceID
             pid = var[2:]
             p_name = net.places[pid].name
             w = place_weights.get(p_name, 0)
             level_weights[lvl] = w
 
     # 2. Build Suffix Sums for Gap Calculation
-    # suffix_gap[i] = sum of weights from level i to end
     suffix_gap = [0] * (limit + 1)
     current_sum = 0
     for i in range(limit - 1, -1, -1):
-        # If we skip this level, we assume we pick 1 if weight > 0
         w = max(0, level_weights[i])
         current_sum += w
         suffix_gap[i] = current_sum
 
     # 3. Handle Root Gap (Optimization)
-    # The BDD root 'reached_node' might not be at level 0.
-    # Variables before the root are "Don't Care" -> We take max weight.
     root_lvl = bdd_mgr.nodes[reached_node][0]
     prefix_gain = suffix_gap[0] - suffix_gap[root_lvl]
 
@@ -263,7 +298,6 @@ def solve_optimization_symbolic(
     dp_score = get_max_weight_dp(
         bdd_mgr, reached_node, level_weights, suffix_gap, memo_scores
     )
-
     max_score = dp_score + prefix_gain
 
     # 5. Extract Solutions
@@ -272,11 +306,7 @@ def solve_optimization_symbolic(
     )
 
     # 6. Finalize Solutions (Fill in Don't Cares)
-    # The extraction returns paths for nodes existing in BDD.
-    # We must set "Don't Care" variables (skipped in BDD or prefix) to 1 if they have weight.
     final_solutions = []
-
-    # Identify all variables with positive weight
     vars_with_weight = []
     for var, lvl in bdd_mgr.var2level.items():
         if level_weights[lvl] > 0:
@@ -284,8 +314,6 @@ def solve_optimization_symbolic(
 
     for sol in partial_solutions:
         full_sol = sol.copy()
-        # If a weight-bearing variable is missing from solution, it was a "Don't Care" or Gap.
-        # To maximize score, we set it to 1.
         for var in vars_with_weight:
             if var not in full_sol:
                 full_sol[var] = 1
@@ -299,10 +327,19 @@ def solve_optimization_symbolic(
 # 4. MAIN EXECUTION
 # =============================================================
 def main():
-    parser = argparse.ArgumentParser(description="Task 5: Optimization (Fixed)")
-    parser.add_argument(
-        "--model", type=str, default="../Standard PNMLs/DocAndPatient.pnml"
+    parser = argparse.ArgumentParser(
+        description="Task 5: Optimization over Reachability"
     )
+    parser.add_argument(
+        "--model",
+        type=str,
+        default="../Standard PNMLs/DocAndPatient.pnml",
+        help="Path to PNML file",
+    )
+    parser.add_argument(
+        "--weights", type=str, help="Manual weights: 'PlaceA=10,PlaceB=5' (Unlisted=0)"
+    )
+
     args = parser.parse_args()
 
     pnml_path = os.path.normpath(args.model)
@@ -315,17 +352,24 @@ def main():
     if not net:
         sys.exit(1)
 
-    # --- Setup ---
-    weights = auto_assign_weights(net)
+    # --- 1. Objective Function Setup ---
+    print(f"\n{Color.YELLOW}--- 1. Objective Function (c^T * M) ---{Color.RESET}")
+    if args.weights:
+        weights = parse_manual_weights(net, args.weights)
+    else:
+        weights = auto_assign_weights(net)
+
+    # --- 2. Explicit Search ---
     print(f"\n{Color.YELLOW}--- 2. Running Explicit Search ---{Color.RESET}")
     bfs_markings = reachable_markings_bfs(net)
     print(f"   Explicit found {len(bfs_markings)} reachable markings.")
 
+    # --- 3. Symbolic Search ---
     print(f"\n{Color.YELLOW}--- 3. Running Symbolic Search ---{Color.RESET}")
     bdd_cnt, _, _, bdd_S, bdd_mgr = run_symbolic_search_pure(net)
     print(f"   Symbolic found {bdd_cnt} reachable markings.")
 
-    # --- Explicit Opt ---
+    # --- 4. Explicit Opt ---
     print(f"\n{Color.CYAN}--- 4. Running Explicit Optimization ---{Color.RESET}")
     place_order, _ = build_place_index(net)
     opt_exp_score, opt_exp_markings, opt_exp_time = solve_optimization_explicit(
@@ -335,9 +379,9 @@ def main():
     print(f"   Count of optimal markings: {len(opt_exp_markings)}")
     print(f"   Time: {opt_exp_time:.6f}s")
 
-    # --- Symbolic Opt ---
+    # --- 5. Symbolic Opt ---
     print(
-        f"\n{Color.CYAN}--- 5. Running Symbolic BDD Optimization (DP Method) ---{Color.RESET}"
+        f"\n{Color.CYAN}--- 5. Running Symbolic Optimization (DP Method) ---{Color.RESET}"
     )
     opt_sym_score, opt_sym_solutions, opt_sym_time = solve_optimization_symbolic(
         bdd_mgr, bdd_S, weights, net
@@ -351,15 +395,12 @@ def main():
     if opt_exp_score == opt_sym_score:
         print(f"✅ SUCCESS: Scores match ({opt_exp_score})")
 
-        # Verify Counts
         if len(opt_exp_markings) == len(opt_sym_solutions):
             print(f"✅ SUCCESS: Counts match ({len(opt_sym_solutions)})")
         else:
             print(
                 f"⚠️ WARNING: Counts differ (Exp={len(opt_exp_markings)}, Sym={len(opt_sym_solutions)})"
             )
-            # Note: This can happen if multiple markings have the same score and 'Don't Care' logic differs slightly,
-            # but usually it should match perfectly for 1-safe nets.
 
         # if len(opt_sym_solutions) > 0 and len(opt_sym_solutions) < 10:
         print("\n--- Best Markings (Symbolic) ---")
