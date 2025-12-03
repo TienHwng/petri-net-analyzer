@@ -274,22 +274,32 @@ def print_petrinet_info(net: PetriNet):
         return
 
     print("=== PETRI NET ===")
-    print("\n📌 PLACES:")
+
+    # COUNT PLACES
+    print(f"\n📌 PLACES ({len(net.places)}):")
     for place in net.places.values():
         print(f"   {place.name} (tokens: {place.initial_marking})")
 
-    print("\n🔄 TRANSITIONS:")
+    # COUNT TRANSITIONS
+    print(f"\n🔄 TRANSITIONS ({len(net.transitions)}):")
     for trans in net.transitions.values():
         print(f"   {trans.name}")
 
-    print("\n🔗 INPUT ARCS:")
+    # COUNT INPUT ARCS
+    # net.input_arcs is a dict: {trans_id: [list_of_arcs]}
+    # We must sum the length of all lists in the dictionary values
+    total_input_arcs = sum(len(arcs) for arcs in net.input_arcs.values())
+    print(f"\n🔗 INPUT ARCS ({total_input_arcs}):")
     for trans_id, arcs in net.input_arcs.items():
         trans_name = net.transitions[trans_id].name
         for place_id, weight in arcs:
             place_name = net.places[place_id].name
             print(f"   {place_name} --[{weight}]--> {trans_name}")
 
-    print("\n🔗 OUTPUT ARCS:")
+    # COUNT OUTPUT ARCS
+    # net.output_arcs is a dict: {trans_id: [list_of_arcs]}
+    total_output_arcs = sum(len(arcs) for arcs in net.output_arcs.values())
+    print(f"\n🔗 OUTPUT ARCS ({total_output_arcs}):")
     for trans_id, arcs in net.output_arcs.items():
         trans_name = net.transitions[trans_id].name
         for place_id, weight in arcs:
