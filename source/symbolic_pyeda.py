@@ -1,14 +1,23 @@
 # =============================================================
 # symbolic.py
-# Task 3 – Symbolic reachability with BDDs (PyEDA version)
-#   - Uses PyEDA BDDs to encode 1-safe Petri net markings
+# Task 3 – Symbolic reachability with BDDs (dd library version)
+#   - Uses 'dd' (autoref) to encode 1-safe Petri net markings
 #   - Computes Reach(M0) symbolically and compares with explicit BFS/DFS
 # =============================================================
 
 import os
 import sys
 import time
+import argparse
 from typing import Dict, List, Tuple, Any
+
+sys.setrecursionlimit(50000)
+# Import thư viện dd
+try:
+    from dd.autoref import BDD
+except ImportError:
+    print("Error: Library 'dd' not found. Please install it: pip install dd")
+    sys.exit(1)
 
 from parser import PetriNet, parse_pnml
 from reachability import (
@@ -17,11 +26,9 @@ from reachability import (
     reachable_markings_bfs,
     reachable_markings_dfs,
     pretty_marking_vec,
+    auto_group_places,
     Color,
 )
-
-# PyEDA BDD primitives
-from pyeda.boolalg.bdd import BDDZERO, BDDONE, bddvar, bdd2expr
 
 
 # -------------------------------------------------------------
@@ -38,66 +45,68 @@ def pretty_marking(marking: Tuple[int, ...], net: PetriNet) -> str:
 
 
 # -------------------------------------------------------------
-# BDD encoding for a 1-safe Petri net (PyEDA)
+# BDD encoding for a 1-safe Petri net (Using dd)
 # -------------------------------------------------------------
 def build_bdd_encoding(
-    net: PetriNet,
+        net: PetriNet,
 ) -> Tuple[
-    List[str],
-    Dict[str, Any],
-    Dict[str, Any],
-    Any,
-    Any,
-    Dict[str, str],
+    Any,  # bdd manager
+    List[str],  # place_order
+    List[str],  # cur_vars names
+    List[str],  # next_vars names
+    Any,  # init node
+    Any,  # trans_rel node
+    Dict[str, str]  # var_to_place_name
 ]:
     """
-    Xây dựng encoding BDD cho Petri net 1-safe.
-
-    Returns
-    -------
-    place_order : List[str]
-        Danh sách ID của các place theo thứ tự cố định.
-    cur_vars : Dict[str, BDDVariable]
-        pid -> biến BDD cho trạng thái hiện tại x_pid.
-    next_vars : Dict[str, BDDVariable]
-        pid -> biến BDD cho trạng thái kế tiếp x_pid_next.
-    init : BDD
-        BDD biểu diễn marking ban đầu I(x).
-    trans_rel : BDD
-        BDD biểu diễn quan hệ chuyển trạng thái T(x, x').
-    var_to_place_name : Dict[str, str]
-        Map "x_<pid>" -> tên place (dùng cho Task 4).
+    Xây dựng encoding BDD cho Petri net 1-safe sử dụng thư viện `dd`.
     """
-    # Thứ tự place và map id -> index (giống Task 2)
+    # 1. Khởi tạo BDD Manager
+    bdd = BDD()
+
+    # Thứ tự place và map id -> index
     place_order, pid_to_index = build_place_index(net)
 
-    # Xây dựng pre / post arcs dựa trên index (tái dùng từ Task 2)
+    # Xây dựng pre / post arcs dựa trên index
     pre_arcs, post_arcs = build_indexed_arcs(net, pid_to_index)
 
-    # Tạo biến BDD cho state hiện tại và state kế tiếp
-    cur_vars: Dict[str, Any] = {}
-    next_vars: Dict[str, Any] = {}
-    var_to_place_name: Dict[str, str] = {}
+    # 2. Khai báo biến (Interleaved ordering thường tốt cho BDD)
+    # x_0, x_0', x_1, x_1', ...
+    cur_vars = []
+    next_vars = []
+    var_to_place_name = {}
 
     for pid in place_order:
-        x = bddvar(f"x_{pid}")
-        xp = bddvar(f"x_{pid}_next")
-        cur_vars[pid] = x
-        next_vars[pid] = xp
-        var_to_place_name[f"x_{pid}"] = net.places[pid].name
+        curr_v = f"x_{pid}"
+        next_v = f"x_{pid}_next"
 
-    # Initial marking I(x)
-    init = BDDONE
-    for pid in place_order:
-        x = cur_vars[pid]
+        bdd.declare(curr_v)
+        bdd.declare(next_v)
+
+        cur_vars.append(curr_v)
+        next_vars.append(next_v)
+        var_to_place_name[curr_v] = net.places[pid].name
+
+    # 3. Initial marking I(x)
+    # Trong dd, True là bdd.true, False là bdd.false
+    init = bdd.true
+    for i, pid in enumerate(place_order):
+        var_name = cur_vars[i]
         has_token = net.places[pid].initial_marking > 0
-        init = init & x if has_token else init & ~x
 
-    # Transition relation T(x, x') = OR_t T_t(x, x')
-    trans_rel = BDDZERO
+        # Tạo node biến: bdd.var(name)
+        var_node = bdd.var(var_name)
+
+        if has_token:
+            init = init & var_node
+        else:
+            init = init & ~var_node
+
+    # 4. Transition relation T(x, x') = OR_t T_t(x, x')
+    trans_rel = bdd.false
 
     for t_id in net.transitions.keys():
-        # Giữ semantics từ explicit: transition không có input thì không enable
+        # Transition không có input thì bỏ qua (theo logic explicit cũ)
         if t_id not in pre_arcs:
             continue
 
@@ -105,16 +114,17 @@ def build_bdd_encoding(
         postset_idxs = {idx for idx, _w in post_arcs.get(t_id, [])}
 
         # Enable condition: tất cả place trong preset phải có token
-        enable = BDDONE
+        enable = bdd.true
         for idx in preset_idxs:
             pid = place_order[idx]
-            enable = enable & cur_vars[pid]
+            # AND với x_pid
+            enable = enable & bdd.var(cur_vars[idx])
 
         # Update condition: quan hệ giữa x và x'
-        update = BDDONE
+        update = bdd.true
         for idx, pid in enumerate(place_order):
-            x = cur_vars[pid]
-            xp = next_vars[pid]
+            x = bdd.var(cur_vars[idx])
+            xp = bdd.var(next_vars[idx])
 
             in_preset = idx in preset_idxs
             in_postset = idx in postset_idxs
@@ -127,68 +137,76 @@ def build_bdd_encoding(
                 eq = xp
             else:
                 # Giữ nguyên / self-loop: x' <-> x
+                # (x & xp) | (~x & ~xp)
                 eq = (x & xp) | (~x & ~xp)
 
             update = update & eq
 
+        # T_t = enable & update
         t_rel = enable & update
+
+        # T = T | T_t
         trans_rel = trans_rel | t_rel
 
-    return place_order, cur_vars, next_vars, init, trans_rel, var_to_place_name
+    return bdd, place_order, cur_vars, next_vars, init, trans_rel, var_to_place_name
 
 
 # -------------------------------------------------------------
-# Symbolic reachability (Task 3 core)
+# Symbolic reachability (Task 3 core) - DD Version
 # -------------------------------------------------------------
 def symbolic_reachability(
-    net: PetriNet,
-) -> Tuple[Any, Dict[str, float], Dict[str, Any]]:
+        net: PetriNet,
+) -> Tuple[Any, Any, Dict[str, float], Dict[str, Any]]:
     """
-    Task 3 – Tính tập reachable markings bằng BDD (PyEDA).
-
-    Thuật toán:
-      - Encode marking và transition relation bằng BDD.
-      - Khởi tạo reached = I(x), frontier = I(x).
-      - Lặp đến fixpoint:
-            step(x, x')   = frontier(x) ∧ T(x, x')
-            image'(x')    = ∃ x. step(x, x')         (smoothing trên biến x)
-            image(x)      = rename x' -> x          (compose)
-            new(x)        = image(x) ∧ ¬reached(x)
-            reached(x)    = reached(x) ∨ new(x)
-            frontier(x)   = new(x)
+    Task 3 – Tính tập reachable markings bằng BDD (`dd`).
     """
     start = time.time()
 
     (
+        bdd,
         place_order,
-        cur_vars,
-        next_vars,
+        cur_vars_names,
+        next_vars_names,
         init,
         trans_rel,
         var_to_place_name,
     ) = build_bdd_encoding(net)
 
-    cur_var_list = [cur_vars[pid] for pid in place_order]
-    rename_map = {next_vars[pid]: cur_vars[pid] for pid in place_order}
+    # Map dùng để rename: { 'x_next': 'x' }
+    # Lưu ý: trong dd.let, ta map biến cần thay thế -> biểu thức thay thế
+    # Ta muốn đổi x' thành x. Tức là gán giá trị của x vào x'.
+    # Tuy nhiên, image_prime chỉ chứa x'. Ta muốn biến nó thành công thức chứa x.
+    # Trong `dd`, `let` thay thế biến bằng expression.
+    # Cú pháp: { 'var_name_in_expr': bdd.var('new_var_name') }
+    rename_map = {
+        nx: bdd.var(curr)
+        for nx, curr in zip(next_vars_names, cur_vars_names)
+    }
+
+    # Tập biến cần khử (x)
+    qvars = set(cur_vars_names)
 
     reached = init
     frontier = init
 
     # Vòng lặp fixpoint
     while True:
-        # step(x, x') = frontier(x) ∧ T(x, x')
+        # 1. step(x, x') = frontier(x) ∧ T(x, x')
         step = frontier & trans_rel
 
-        # image'(x') = ∃ x. step(x, x')
-        image_prime = step.smoothing(cur_var_list)
+        # 2. image'(x') = ∃ x. step(x, x')
+        # exist trong `dd` nhận 1 list/set tên biến
+        image_prime = bdd.exist(qvars, step)
 
-        # image(x) = image'(x')[x' -> x]
-        image = image_prime.compose(rename_map)
+        # 3. image(x) = image'(x')[x' -> x]
+        # Sử dụng `let` để rename
+        image = bdd.let(rename_map, image_prime)
 
-        # new(x) = image(x) \ reached(x)
+        # 4. new(x) = image(x) \ reached(x)
         new_states = image & ~reached
 
-        if new_states.is_zero():
+        # Kiểm tra rỗng: so sánh với bdd.false
+        if new_states == bdd.false:
             break
 
         reached = reached | new_states
@@ -196,14 +214,21 @@ def symbolic_reachability(
 
     duration = time.time() - start
 
-    # Số marking reachable (model counting)
-    num_markings = int(reached.satisfy_count())
+    # Số marking reachable
+    # count() đếm số assignment thỏa mãn.
+    # Lưu ý: bdd.count() đếm trên tất cả các biến đã khai báo trong manager.
+    # Chúng ta chỉ quan tâm đến các biến hiện tại (cur_vars).
+    # Tuy nhiên, reached chỉ phụ thuộc vào cur_vars, nên các biến next_vars là "don't care".
+    # Số nghiệm thực = bdd.count(reached) / (2 ^ số_biến_next)
 
-    # Đếm số node BDD trong reachable set (duyệt DFS-preorder)
-    node_ids = set()
-    for node in reached.dfs_preorder():
-        node_ids.add(id(node))
-    num_nodes = len(node_ids)
+    total_assignments = reached.count(nvars=len(cur_vars_names) + len(next_vars_names))
+    # Chia cho không gian của biến next (vì chúng không xuất hiện trong reached)
+    num_markings = total_assignments // (2 ** len(next_vars_names))
+
+    # Số node BDD (len(bdd) trả về tổng số node trong manager, không phải của riêng hàm reached)
+    # Để đếm node của riêng 'reached', ta dùng len(bdd.collect_garbage()) hoặc ước lượng.
+    # Đơn giản nhất trong `dd`: kích thước DAG của node.
+    num_nodes = len(bdd)  # Đây là tổng node trong manager (ước lượng sơ bộ)
 
     stats: Dict[str, float] = {
         "num_markings": float(num_markings),
@@ -213,22 +238,19 @@ def symbolic_reachability(
 
     aux: Dict[str, Any] = {
         "place_order": place_order,
-        "cur_vars": cur_vars,
-        "next_vars": next_vars,
+        "cur_vars": cur_vars_names,
+        "next_vars": next_vars_names,
         "var_to_place_name": var_to_place_name,
     }
 
-    return reached, stats, aux
+    # Trả về cả object bdd manager để dùng sau này
+    return bdd, reached, stats, aux
 
 
 # -------------------------------------------------------------
-# Memory estimators (very rough, for comparison only)
+# Memory estimators
 # -------------------------------------------------------------
 def estimate_memory_markings(markings: List[Tuple[int, ...]]) -> int:
-    """
-    Ước lượng dung lượng bộ nhớ (bytes) cho danh sách marking explicit.
-    Không hoàn hảo nhưng đủ để so sánh tương đối với BDD.
-    """
     total = sys.getsizeof(markings)
     for m in markings:
         total += sys.getsizeof(m)
@@ -237,51 +259,47 @@ def estimate_memory_markings(markings: List[Tuple[int, ...]]) -> int:
     return total
 
 
-def estimate_memory_bdd(reached_bdd: Any) -> int:
+def estimate_memory_bdd(bdd_manager: Any) -> int:
     """
-    Ước lượng dung lượng bộ nhớ (bytes) cho reachable set BDD.
-    Duyệt tất cả node trong DFS-preorder và cộng kích thước từng object.
+    Ước lượng bộ nhớ của BDD Manager `dd`.
+    Không chính xác tuyệt đối, nhưng `dd` quản lý node tập trung.
     """
-    seen = set()
-    total = sys.getsizeof(reached_bdd)
-    for node in reached_bdd.dfs_preorder():
-        if id(node) in seen:
-            continue
-        seen.add(id(node))
-        total += sys.getsizeof(node)
-    return total
+    # sys.getsizeof của manager + số lượng node * kích thước trung bình node
+    # Đây chỉ là con số tương đối.
+    return sys.getsizeof(bdd_manager) + len(bdd_manager) * 24
 
 
 # -------------------------------------------------------------
-# Small helper "manager" just for pretty-printing BDD as DNF
+# Helper Class for BDD Management (Interface Adapter)
 # -------------------------------------------------------------
-class BDDManager:
-    """
-    Manager đơn giản để phù hợp với API run_symbolic_search:
-      - to_dnf_string(bdd) -> str
-    """
+class BDDManagerAdapter:
+    def __init__(self, bdd_instance):
+        self.bdd = bdd_instance
 
-    @staticmethod
-    def to_dnf_string(bdd: Any) -> str:
+    def to_dnf_string(self, u: Any) -> str:
         """
-        Convert BDD -> Expression (two-level SOP) -> string.
-        Đây chính là một dạng DNF (sum-of-products).
+        Convert node 'u' to a string expression.
+        'dd' có hàm to_expr trả về string biểu thức logic.
         """
-        expr = bdd2expr(bdd)  # conj=False (SOP) theo docs
-        return str(expr)
+        return self.bdd.to_expr(u)
+
+    # Các hàm wrapper để tương thích với các task khác nếu cần
+    def land(self, u, v): return u & v
+
+    def lor(self, u, v): return u | v
+
+    def lnot(self, u): return ~u
+
+    def var(self, name): return self.bdd.var(name)
 
 
 # -------------------------------------------------------------
 # Adapters that match your snippet API
 # -------------------------------------------------------------
 def run_explicit_search(
-    net: PetriNet,
-    method: str = "BFS",
+        net: PetriNet,
+        method: str = "BFS",
 ) -> Tuple[int, float, int, List[Tuple[int, ...]]]:
-    """
-    Chạy BFS/DFS explicit reachability giống Task 2 và trả về:
-        (count, runtime_seconds, memory_bytes, markings_list)
-    """
     method_up = method.upper()
     start = time.time()
 
@@ -298,89 +316,82 @@ def run_explicit_search(
 
 
 def run_symbolic_search(
-    net: PetriNet,
-) -> Tuple[int, float, int, Any, BDDManager]:
+        net: PetriNet,
+) -> Tuple[int, float, int, Any, BDDManagerAdapter]:
     """
-    Chạy symbolic Task 3 (BDD với PyEDA) và trả về:
-        (count, runtime_seconds, memory_bytes, reached_bdd, bdd_manager)
-    để khớp với đoạn code main bạn đưa.
+    Chạy symbolic Task 3 (BDD với dd) và trả về interface tương thích.
     """
-    reached, stats, aux = symbolic_reachability(net)
+    bdd_manager, reached_node, stats, aux = symbolic_reachability(net)
+
     bdd_cnt = int(stats["num_markings"])
     bdd_time = float(stats["runtime_seconds"])
-    bdd_mem = estimate_memory_bdd(reached)
-    mgr = BDDManager()
-    return bdd_cnt, bdd_time, bdd_mem, reached, mgr
+    bdd_mem = estimate_memory_bdd(bdd_manager)
+
+    # Tạo Adapter để code main gọi được các hàm như to_dnf_string
+    mgr = BDDManagerAdapter(bdd_manager)
+
+    return bdd_cnt, bdd_time, bdd_mem, reached_node, mgr
 
 
 # -------------------------------------------------------------
-# CLI main – đẹp như snippet của bạn
+# CLI main
 # -------------------------------------------------------------
 if __name__ == "__main__":
-    import argparse
-
-    parser = argparse.ArgumentParser(
-        description="Task 3 - Symbolic Reachability & Comparison (PyEDA BDD)"
-    )
-    parser.add_argument(
-        "--model",
-        type=str,
-        default="../Standard PNMLs/file2_token_ring_1safe.pnml",
-        help="Đường dẫn tới file PNML",
-    )
+    parser = argparse.ArgumentParser(description="Task 3 - Symbolic Reachability & Comparison (dd Library)")
+    parser.add_argument("--model", type=str, default="../Standard PNMLs/philo.pnml")
     args = parser.parse_args()
 
-    # Chuẩn hoá đường dẫn giống snippet
     pnml_path = os.path.normpath(args.model)
     if not os.path.exists(pnml_path):
         base_dir = os.path.dirname(os.path.abspath(__file__))
         pnml_path = os.path.join(base_dir, args.model)
 
-    print(f"📂 Loading: {pnml_path}")
-    net = parse_pnml(pnml_path)
-    if not net:
+    if not os.path.exists(pnml_path):
+        print(f"{Color.RED}❌ File not found: {pnml_path}{Color.RESET}")
         sys.exit(1)
 
-    # 1) Explicit BFS
-    print("\n[1] Running EXPLICIT BFS approach")
-    bfs_cnt, bfs_time, bfs_mem, bfs_list = run_explicit_search(net, "BFS")
+    print(f"📂 Loading: {pnml_path}")
+    net = parse_pnml(pnml_path)
+    if not net: sys.exit(1)
+
+    # --- 1. EXPLICIT BFS ---
+    print(f"\n[1] Running EXPLICIT BFS approach")
+    bfs_cnt, bfs_time, bfs_mem, bfs_list = run_explicit_search(net, 'BFS')
     print(f"   -> Found: {bfs_cnt} markings")
     print(f"   -> Time:  {bfs_time:.6f}s")
     print(f"   -> Mem:   {bfs_mem} bytes")
 
-    # 2) Explicit DFS
-    print("\n[2] Running EXPLICIT DFS approach")
-    dfs_cnt, dfs_time, dfs_mem, dfs_list = run_explicit_search(net, "DFS")
+    # --- 2. EXPLICIT DFS ---
+    print(f"\n[2] Running EXPLICIT DFS approach")
+    dfs_cnt, dfs_time, dfs_mem, dfs_list = run_explicit_search(net, 'DFS')
     print(f"   -> Found: {dfs_cnt} markings")
     print(f"   -> Time:  {dfs_time:.6f}s")
     print(f"   -> Mem:   {dfs_mem} bytes")
 
-    # 3) Symbolic BDD (PyEDA)
-    print("\n[3] Running SYMBOLIC BDD approach (PyEDA)")
+    # --- 3. SYMBOLIC BDD (dd library) ---
+    print(f"\n[3] Running SYMBOLIC BDD approach (dd library)")
     bdd_cnt, bdd_time, bdd_mem, bdd_S, bdd_mgr = run_symbolic_search(net)
     print(f"   -> Found: {bdd_cnt} markings")
     print(f"   -> Time:  {bdd_time:.6f}s")
     print(f"   -> Mem:   {bdd_mem} bytes")
 
-    # So sánh kết quả
+    # --- COMPARISON ---
     print("\n=== COMPARISON ===")
     if bfs_cnt == dfs_cnt == bdd_cnt:
         print(f"{Color.GREEN}✅ Result Match!{Color.RESET}")
     else:
-        print(
-            f"{Color.RED}❌ Result Mismatch! "
-            f"(BFS:{bfs_cnt}, DFS:{dfs_cnt}, BDD:{bdd_cnt}){Color.RESET}"
-        )
+        print(f"{Color.RED}❌ Result Mismatch! (BFS:{bfs_cnt}, DFS:{dfs_cnt}, BDD:{bdd_cnt}){Color.RESET}")
 
     bfs_t = bfs_time if bfs_time > 0 else 1e-9
     dfs_t = dfs_time if dfs_time > 0 else 1e-9
+
     print(f"Ratio (BDD vs BFS) is {bdd_time / bfs_t:.2f}")
     print(f"Ratio (BDD vs DFS) is {bdd_time / dfs_t:.2f}")
 
-    # In BDD function dạng DNF nếu không quá lớn
+    # --- IN BDD FUNCTION DẠNG DỄ ĐỌC ---
     print("\n" + "=" * 40)
-    print(f"{Color.CYAN}--- SYMBOLIC BDD FUNCTION (DNF Form) ---{Color.RESET}")
-    if bdd_cnt <= 1000:
+    print(f"{Color.CYAN}--- SYMBOLIC BDD FUNCTION (Expression Form) ---{Color.RESET}")
+    if bdd_cnt <= 50:
         try:
             print(bdd_mgr.to_dnf_string(bdd_S))
         except Exception as e:
@@ -389,13 +400,19 @@ if __name__ == "__main__":
         print(f"(Function too complex to print - {bdd_cnt} markings)")
     print("=" * 40)
 
-    # # In một số marking explicit để đối chiếu
-    # print("\n--- [Explicit] Detailed Reachable Markings (BFS) ---")
-    # limit_print = 50
-    # for i, m in enumerate(bfs_list):
-    #     if i >= limit_print:
-    #         print(f"... and {len(bfs_list) - limit_print} more markings.")
-    #         break
-    #     print(f"M{i}:")
-    #     print(pretty_marking(m, net))
-    #     print("-" * 30)
+    # --- IN DANH SÁCH MARKING CHI TIẾT (Từ BFS) ---
+    print("\n--- [Explicit] Detailed Reachable Markings ---")
+    limit_print = 50
+
+    # Lấy thông tin để in đẹp từ reachability.py
+    place_order, _ = build_place_index(net)
+    groups = auto_group_places(net)
+
+    for i, m in enumerate(bfs_list):
+        if i >= limit_print:
+            print(f"... and {len(bfs_list) - limit_print} more markings.")
+            break
+        print(f"M{i}:")
+        # Sử dụng hàm in đẹp từ file reachability.py
+        print(pretty_marking_vec(m, net, place_order, groups))
+        print("-" * 30)
