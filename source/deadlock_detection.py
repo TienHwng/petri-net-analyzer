@@ -1,7 +1,6 @@
 # =============================================================
 # task4_deadlock_complete.py
-# Task 4: Complete Deadlock Detection (Final Optimized Version)
-# Features: Symbolic Detection, ILP Verification, Trace Reconstruction.
+# Task 4: Complete Deadlock Detection (Fixed for 'dd' library)
 # =============================================================
 
 import os
@@ -11,11 +10,10 @@ import argparse
 import collections
 from typing import List, Dict, Set, Tuple
 
-# Tăng giới hạn đệ quy cho BDD
+# Tăng giới hạn đệ quy (phòng hờ, dù 'dd' xử lý phần lớn ở tầng dưới)
 sys.setrecursionlimit(50000)
 
 
-# --- CLASS MÀU SẮC (FIX LỖI NAME ERROR) ---
 class Color:
     GREEN = "\033[92m"
     RED = "\033[91m"
@@ -27,253 +25,191 @@ class Color:
 
 # --- IMPORTS TỪ CÁC MODULE KHÁC ---
 try:
-    # Tự động thêm đường dẫn hiện tại vào sys.path
     script_dir = os.path.dirname(os.path.abspath(__file__))
     if script_dir not in sys.path:
         sys.path.append(script_dir)
 
-    # Giả định các file cơ bản (parser, reachability, symbolic_computation_BDD) đã có
     from parser import parse_pnml, PetriNet
     from reachability import build_place_index, pretty_marking_vec, auto_group_places
-    from symbolic_computation_BDD import run_symbolic_search_pure, BDD
+
+    # [CHANGE]: Import từ file symbolic.py (chứa code dùng thư viện dd)
+    from symbolic_computation_BDD import run_symbolic_search
 except ImportError as e:
     print(f"{Color.RED}❌ Import Error: {e}{Color.RESET}")
-    print("Please ensure parser.py, reachability.py, and symbolic_computation_BDD.py are available.")
+    print("Please ensure parser.py, reachability.py, and symbolic.py are available.")
     sys.exit(1)
 
-# Import thư viện PuLP cho phần ILP
+# Import thư viện PuLP
 try:
     import pulp
 
     HAS_PULP = True
 except ImportError:
     HAS_PULP = False
-    print(f"{Color.YELLOW}⚠️ Warning: 'pulp' library not found. ILP State Equation check will be skipped.{Color.RESET}")
+    print(f"{Color.YELLOW}⚠️ Warning: 'pulp' library not found. ILP check skipped.{Color.RESET}")
 
 
 # =============================================================
 # 1. BDD LOGIC: DEADLOCK FORMULATION
 # =============================================================
 
-def build_dead_formula(bdd: BDD, net: PetriNet, place_order: List[str], x_ids: List[int]) -> int:
+def build_dead_formula(bdd_mgr, net: PetriNet, place_order: List[str], x_ids: List[object]) -> object:
     """
-    Xây dựng công thức BDD đại diện cho tập các trạng thái chết.
-    Dead = AND ( NOT (Enabled(t)) ) với mọi t.
+    Xây dựng công thức Deadlock = AND ( NOT (Enabled(t)) )
     """
     pid_to_idx = {pid: i for i, pid in enumerate(place_order)}
-    Any_Enabled = 0  # False
+
+    # Trong 'dd', False là bdd.false, nhưng qua Adapter ta dùng logic của nó
+    # Tuy nhiên, để khởi tạo biến tích lũy cho OR, ta nên dùng False (0) của BDD
+    # bdd_mgr.bdd.false là node False thực sự
+    Any_Enabled = bdd_mgr.bdd.false
 
     for t_id in net.transitions:
         pre = {pid for pid, w in net.input_arcs.get(t_id, [])}
         post = {pid for pid, w in net.output_arcs.get(t_id, [])}
 
-        # Điều kiện Enable: Pre có token (=1) VÀ (Post-Pre) không có token (=0) (với 1-safe)
-        En_t = 1
+        # Enable condition: Pre places have token (AND x_p)
+        # 1-safe assumption: we verify if input places are 1.
+        # Output places empty check is optional in pure Petri nets,
+        # but required if we treat 1-safe strictly as prohibiting adding to full place.
+        # Here we follow standard Enable rule: Only check inputs >= weight.
 
+        # En_t ban đầu là True
+        En_t = bdd_mgr.bdd.true
+
+        # Với mỗi place p trong pre-set
         for pid in pre:
             idx = pid_to_idx[pid]
-            En_t = bdd.land(En_t, x_ids[idx])
+            # En_t = En_t AND x_p
+            En_t = bdd_mgr.land(En_t, x_ids[idx])
 
-        for pid in (post - pre):
-            idx = pid_to_idx[pid]
-            En_t = bdd.land(En_t, bdd.lnot(x_ids[idx]))
+        # Accumulate: Any_Enabled = Any_Enabled OR En_t
+        Any_Enabled = bdd_mgr.lor(Any_Enabled, En_t)
 
-        Any_Enabled = bdd.lor(Any_Enabled, En_t)
-
-    return bdd.lnot(Any_Enabled)
+    # Dead = NOT (Any_Enabled)
+    return bdd_mgr.lnot(Any_Enabled)
 
 
-def extract_marking_from_bdd(bdd: BDD, node: int, var_order: List[str]) -> List[int]:
-    """Trích xuất 1 nghiệm (marking vector) từ node BDD."""
-    if node == 0: return None
-    assignment = {}
+def extract_marking_from_bdd(bdd_mgr, node, place_order: List[str]) -> List[int]:
+    """
+    Trích xuất 1 nghiệm từ node BDD sử dụng thư viện 'dd'.
+    Thay vì DFS thủ công, ta dùng hàm pick() của thư viện.
+    """
+    if node == bdd_mgr.bdd.false:
+        return None
 
-    # DFS tìm đường đi đến node 1 (True)
-    def dfs(u):
-        if u == 1: return True
-        if u == 0: return False
+    # 'dd' function pick(u) returns a dict {var_name: True/False}
+    # satisfying the formula u.
+    assignment = bdd_mgr.bdd.pick(node)
 
-        lvl, low, high = bdd.nodes[u]
-        var_name = bdd.level2var[lvl]
-
-        # Ưu tiên nhánh 1 để tìm marking có token
-        if dfs(high):
-            assignment[var_name] = 1
-            return True
-        if dfs(low):
-            assignment[var_name] = 0
-            return True
-        return False
-
-    dfs(node)
-
-    # Map về vector theo thứ tự biến x_
     marking = []
-    x_vars = [v for v in var_order if v.startswith("x_")]
-    for v in x_vars:
-        marking.append(assignment.get(v, 0))
+    for pid in place_order:
+        var_name = f"x_{pid}"
+        # Nếu biến có trong assignment và là True -> 1, ngược lại -> 0
+        val = 1 if assignment.get(var_name, False) else 0
+        marking.append(val)
+
     return marking
 
 
 # =============================================================
-# 2. ILP CHECK: STATE EQUATION (M = M0 + C*sigma)
+# 2. ILP CHECK & 3. TRACE (Giữ nguyên logic, chỉ chỉnh sửa nhỏ)
 # =============================================================
 
 def verify_with_ilp(net: PetriNet, place_order: List[str], target_marking: List[int]):
-    """
-    Sử dụng PuLP để kiểm tra phương trình trạng thái (State Equation).
-    Tìm sigma >= 0 sao cho: C * sigma = M_dead - M_0
-    """
     if not HAS_PULP: return
-
     print(f"\n{Color.CYAN}--- [ILP] State Equation Verification (using PuLP) ---{Color.RESET}")
 
-    # Tạo bài toán
     prob = pulp.LpProblem("StateEquationCheck", pulp.LpMinimize)
-
-    # Biến: sigma (số lần bắn của mỗi transition), nguyên không âm
     t_ids = list(net.transitions.keys())
     sigma_vars = {t: pulp.LpVariable(f"sigma_{t}", lowBound=0, cat=pulp.LpInteger) for t in t_ids}
-
-    # Hàm mục tiêu giả
     prob += pulp.lpSum(sigma_vars.values())
 
-    # Lấy M0 gốc từ file PNML
     raw_m0 = [net.places[p].initial_marking for p in place_order]
-
-    # "Ép" M0 về dạng 1-safe (nếu > 0 thì bằng 1) để khớp với giả định của BDD
     m0_safe = [1 if m > 0 else 0 for m in raw_m0]
 
-    # Ràng buộc: M_dead = M0_safe + C * sigma => C * sigma = M_dead - M0_safe
     for i, p_id in enumerate(place_order):
         delta_p = target_marking[i] - m0_safe[i]
-
-        # Tính dòng của ma trận C tương ứng với p
         constraint_expr = 0
         for t in t_ids:
             weight = 0
-            # Output arcs (t -> p)
             for (pid, w) in net.output_arcs.get(t, []):
                 if pid == p_id: weight += w
-            # Input arcs (p -> t)
             for (pid, w) in net.input_arcs.get(t, []):
                 if pid == p_id: weight -= w
-
             if weight != 0:
                 constraint_expr += weight * sigma_vars[t]
-
         prob += (constraint_expr == delta_p, f"Flow_Constraint_{p_id}")
 
-    # Giải
     status = prob.solve(pulp.PULP_CBC_CMD(msg=False))
 
     if status == pulp.LpStatusOptimal:
-        print(f"{Color.GREEN}✅ State Equation Satisfied! (1-Safe Consistent){Color.RESET}")
-        print(f"   Firing Vector (Parikh vector):")
+        print(f"{Color.GREEN}✅ State Equation Satisfied!{Color.RESET}")
         fired = []
         for t in t_ids:
             val = pulp.value(sigma_vars[t])
             if val and val > 0:
-                t_name = net.transition_id_to_name.get(t, t)  # <-- GET NAME HERE
+                t_name = net.transition_id_to_name.get(t, t)
                 fired.append(f"{t_name}: {int(val)}")
-        print(f"   Trace Summary: [{', '.join(fired)}]")
+        print(f"   Parikh Vector: [{', '.join(fired)}]")
     else:
-        print(f"{Color.RED}❌ State Equation Violated!{Color.RESET}")
-        print("   -> Deadlock might be reachable but structurally invisible to State Eq.")
+        print(f"{Color.RED}❌ State Equation Violated!{Color.RESET} (Spurious deadlock candidate)")
 
-
-# =============================================================
-# 3. TRACE: RECONSTRUCT PATH (BFS)
-# =============================================================
 
 def find_trace_to_deadlock(net: PetriNet, place_order: List[str], target_marking: List[int]):
-    """
-    Tìm đường đi ngắn nhất từ M0 đến M_dead bằng BFS tường minh.
-    (Chỉ khả thi khi không gian trạng thái không quá bùng nổ)
-    """
-    if not HAS_PULP: return  # Chỉ chạy nếu PuLP có sẵn (Vì nó là phần bổ sung)
-
-    print(f"\n{Color.CYAN}--- [Trace] Reconstructing Firing Sequence ---{Color.RESET}")
+    print(f"\n{Color.CYAN}--- [Trace] Reconstructing Firing Sequence (BFS) ---{Color.RESET}")
     start_time = time.perf_counter()
 
     target_tuple = tuple(target_marking)
-    m0_list = [net.places[p].initial_marking for p in place_order]
+    m0_list = [1 if net.places[p].initial_marking > 0 else 0 for p in place_order]  # Ensure 1-safe M0
     m0_tuple = tuple(m0_list)
 
     if m0_tuple == target_tuple:
         print("   -> Initial marking is already the deadlock.")
         return
 
-    # BFS Queue: (current_marking_tuple, path_of_transitions)
     queue = collections.deque([(m0_tuple, [])])
     visited = {m0_tuple}
 
-    # Cache cấu trúc mạng để chạy nhanh hơn (Pre-process)
+    # Optimize transition lookup
     trans_data = []
     for t_id in net.transitions:
-        # Pre indices (chỉ số của input places)
-        pre_idxs = []
-        for pid, w in net.input_arcs.get(t_id, []):
-            if pid in place_order: pre_idxs.append(place_order.index(pid))
-
-        # Post indices (chỉ số của output places)
-        post_idxs = []
-        for pid, w in net.output_arcs.get(t_id, []):
-            if pid in place_order: post_idxs.append(place_order.index(pid))
-
+        pre_idxs = [place_order.index(pid) for pid, w in net.input_arcs.get(t_id, []) if pid in place_order]
+        post_idxs = [place_order.index(pid) for pid, w in net.output_arcs.get(t_id, []) if pid in place_order]
         trans_data.append((t_id, pre_idxs, post_idxs))
 
-    # Limit search space to avoid hang on huge nets
-    MAX_STATES = 100000
-
+    MAX_STATES = 200000
     steps = 0
+
     while queue:
         curr_m, path = queue.popleft()
         steps += 1
-
         if steps > MAX_STATES:
-            print(f"   (Trace search stopped after {MAX_STATES} states visited - too deep)")
+            print(f"   (Trace search stopped after {MAX_STATES} states - too deep/complex)")
             return
 
-        # Check enabled transitions using cached data
         for t_id, pre_idxs, post_idxs in trans_data:
             # Check enabled
-            enabled = True
-            for idx in pre_idxs:
-                if curr_m[idx] < 1:  # Assuming weight 1 for simplicity
-                    enabled = False
-                    break
-
-            if enabled:
-                # Fire transition (Tính marking mới)
+            if all(curr_m[idx] == 1 for idx in pre_idxs):
+                # Fire
                 new_m_list = list(curr_m)
-
-                # 1. Trừ token (1-safe: gán về 0)
-                for idx in pre_idxs:
-                    new_m_list[idx] = 0
-
-                    # 2. Cộng token (1-safe: gán lên 1)
-                for idx in post_idxs:
-                    new_m_list[idx] = 1
-
+                for idx in pre_idxs: new_m_list[idx] = 0
+                for idx in post_idxs: new_m_list[idx] = 1
                 new_m = tuple(new_m_list)
 
                 if new_m == target_tuple:
-                    final_path_ids = path + [t_id]
-
-                    # --- CHUYỂN ID SANG TÊN ---
-                    t_names = [net.transition_id_to_name.get(t, t) for t in final_path_ids]
-
-                    print(f"   -> Path Found (Length {len(final_path_ids)}):")
-                    print(f"      {' -> '.join(t_names)}")  # <-- PRINT NAMES
-                    print(f"   -> Trace Time: {time.perf_counter() - start_time:.4f}s")
+                    final_path = path + [t_id]
+                    t_names = [net.transition_id_to_name.get(t, t) for t in final_path]
+                    print(f"   -> Path Found ({len(final_path)} steps):")
+                    print(f"      {' -> '.join(t_names)}")
+                    print(f"   -> Time: {time.perf_counter() - start_time:.4f}s")
                     return
 
                 if new_m not in visited:
                     visited.add(new_m)
                     queue.append((new_m, path + [t_id]))
 
-    print("   -> Trace not found (Deadlock might be unreachable in explicit graph or graph too large).")
+    print("   -> Trace not found (BFS exhaust).")
 
 
 # =============================================================
@@ -285,40 +221,41 @@ def solve_task4_complete(pnml_path: str):
     net = parse_pnml(pnml_path)
     if not net: return
     net.transition_id_to_name = {t_id: t_obj.name for t_id, t_obj in net.transitions.items()}
-    # --- STEP 1: SYMBOLIC REACHABILITY (TASK 3) ---
-    print(f"\n{Color.BOLD}STEP 1: COMPUTING REACHABILITY (BDD - Task 3){Color.RESET}")
 
-    count, t_reach, mem, S_reach, bdd_mgr = run_symbolic_search_pure(net)
+    # --- STEP 1: SYMBOLIC REACHABILITY (From Task 3) ---
+    print(f"\n{Color.BOLD}STEP 1: REACHABILITY (using 'dd' library){Color.RESET}")
+    # run_symbolic_search trả về (count, time, mem, REACHED_NODE, MANAGER_ADAPTER)
+    count, t_reach, mem, S_reach, bdd_mgr = run_symbolic_search(net)
+
     print(f"   -> Reachable States: {count}")
-    print(f"   -> BDD Construction Time: {t_reach:.4f}s")
+    print(f"   -> Time: {t_reach:.4f}s")
 
-    # Chuẩn bị dữ liệu
     place_order, _ = build_place_index(net)
+
+    # Tạo danh sách các node biến BDD tương ứng với places (dùng cho công thức Deadlock)
+    # bdd_mgr.var(name) gọi xuống dd.var(name)
     x_ids = [bdd_mgr.var(f"x_{p}") for p in place_order]
-    var_order = [bdd_mgr.level2var[i] for i in range(len(bdd_mgr.var2level))]
 
-    # --- STEP 2: DEADLOCK DETECTION (LOGIC) ---
-    print(f"\n{Color.BOLD}STEP 2: DEADLOCK DETECTION (Intersection){Color.RESET}")
-
+    # --- STEP 2: DEADLOCK DETECTION ---
+    print(f"\n{Color.BOLD}STEP 2: DEADLOCK DETECTION{Color.RESET}")
     start_detect = time.perf_counter()
 
     # 2a. Build Dead Formula
     Dead_Condition = build_dead_formula(bdd_mgr, net, place_order, x_ids)
 
-    # 2b. Intersection
+    # 2b. Intersection: Deadlock = Reachable AND Dead_Condition
     Deadlock_Set = bdd_mgr.land(S_reach, Dead_Condition)
 
-    detect_time = time.perf_counter() - start_detect
-    print(f"   -> Detection Time: {detect_time:.6f}s")
+    print(f"   -> Detection Time: {time.perf_counter() - start_detect:.6f}s")
 
-    if Deadlock_Set == 0:
-        print(f"\n{Color.GREEN}✅ CONCLUSION: NO DEADLOCK FOUND.{Color.RESET}")
-        print("   The system is deadlock-free.")
+    # Kiểm tra rỗng (so sánh với node False)
+    if Deadlock_Set == bdd_mgr.bdd.false:
+        print(f"\n{Color.GREEN}✅ NO DEADLOCK FOUND.{Color.RESET}")
     else:
-        print(f"\n{Color.RED}❌ CONCLUSION: DEADLOCK DETECTED!{Color.RESET}")
+        print(f"\n{Color.RED}❌ DEADLOCK DETECTED!{Color.RESET}")
 
-        # 2c. Extract Example
-        dead_marking = extract_marking_from_bdd(bdd_mgr, Deadlock_Set, var_order)
+        # 2c. Extract Example using 'dd' pick
+        dead_marking = extract_marking_from_bdd(bdd_mgr, Deadlock_Set, place_order)
         groups = auto_group_places(net)
 
         print("\n   [Example Deadlock Marking]:")
@@ -336,24 +273,15 @@ if __name__ == "__main__":
     parser.add_argument("--model", type=str, default="philo.pnml")
     args = parser.parse_args()
 
-    # --- LOGIC XỬ LÝ PATH THÔNG MINH ---
     pnml_path = os.path.normpath(args.model)
-
-    # 1. Kiểm tra đường dẫn trực tiếp (CWD)
     if not os.path.exists(pnml_path):
-        # 2. Kiểm tra đường dẫn tương đối so với file script
         base_dir = os.path.dirname(os.path.abspath(__file__))
         pnml_path = os.path.join(base_dir, args.model)
-
-        # 3. (Optional) Nếu không tìm thấy, thử tìm trong Standard PNMLs
         if not os.path.exists(pnml_path):
             pnml_path = os.path.join(base_dir, "../Standard PNMLs", args.model)
 
     if not os.path.exists(pnml_path):
-        print(f"{Color.RED}❌ File not found: {pnml_path}{Color.RESET}")
-        # In thêm thông tin debug đường dẫn để user dễ sửa
-        print(f"   Checked: {os.path.abspath(args.model)}")
-        print(f"   Checked relative: {os.path.join(os.path.dirname(os.path.abspath(__file__)), args.model)}")
+        print(f"File not found: {args.model}")
         sys.exit(1)
 
     solve_task4_complete(pnml_path)
