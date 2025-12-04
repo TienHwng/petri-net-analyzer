@@ -333,7 +333,7 @@ def main():
     parser.add_argument(
         "--model",
         type=str,
-        default="../Standard PNMLs/DocAndPatient.pnml",
+        default="../Standard PNMLs/diningPhilosophers.pnml",
         help="Path to PNML file",
     )
     parser.add_argument(
