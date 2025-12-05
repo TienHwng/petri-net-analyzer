@@ -270,7 +270,7 @@ def solve_task4_complete(pnml_path: str):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Task 4 Complete: Deadlock Detection")
-    parser.add_argument("--model", type=str, default="philo.pnml")
+    parser.add_argument("--model", type=str, default="file1_cabines_1safe.pnml")
     args = parser.parse_args()
 
     pnml_path = os.path.normpath(args.model)
