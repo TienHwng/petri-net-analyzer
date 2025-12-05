@@ -3,10 +3,12 @@
 # Universal Petri Net Reachability Analyzer (BFS + DFS)
 #  - 1-safe marking representation (0/1 vector)
 #  - Clear separation: search vs printing
+#  - Added: Execution time measurement
 # =============================================================
 
 import os
 import re
+import time  # [ADDED] Import time module
 import argparse
 from collections import deque, defaultdict, Counter
 from typing import Dict, List, Tuple
@@ -21,6 +23,7 @@ class Color:
     GREEN = "\033[92m"
     RED = "\033[91m"
     CYAN = "\033[96m"
+    YELLOW = "\033[93m"
     RESET = "\033[0m"
 
 
@@ -89,15 +92,6 @@ def is_enabled_vec(
 ) -> bool:
     """
     Check if a transition is enabled under a given 1-safe marking vector.
-
-    Semantics
-    ---------
-    - We require marking[idx] >= weight for every (idx, weight) in the preset.
-    - If a transition has no entry in pre_arcs, it is considered *not enabled*.
-      This means transitions without input places are disabled unless the parser
-      stores them with an explicit empty list in net.input_arcs.
-      If you prefer the textbook Petri net semantics where an empty preset
-      implies "always enabled", you can change this behavior.
     """
     if trans_id not in pre_arcs:
         return False
@@ -116,17 +110,6 @@ def fire_transition_vec(
 ) -> Vec:
     """
     Fire a transition and return the new 1-safe marking vector.
-
-    Assumes
-    -------
-    - is_enabled_vec(trans_id, marking, pre_arcs) returned True.
-
-    Runtime checks
-    --------------
-    - If consumption would make a place negative, a ValueError is raised.
-      (This should never happen if is_enabled_vec is correct.)
-    - If any place ends up with more than 1 token, a ValueError is raised
-      to signal a violation of 1-safeness.
     """
     if not is_enabled_vec(trans_id, marking, pre_arcs):
         raise ValueError(f"Transition {trans_id} fired while not enabled")
@@ -233,11 +216,6 @@ def pretty_marking_vec(
 def reachable_markings_bfs(net: PetriNet) -> List[Vec]:
     """
     Enumerate all reachable markings using Breadth-First Search (BFS).
-
-    Returns
-    -------
-    List[Vec]
-        List of all reachable 1-safe markings (each marking is a Vec).
     """
     place_order, pid_to_index = build_place_index(net)
     pre_arcs, post_arcs = build_indexed_arcs(net, pid_to_index)
@@ -247,7 +225,6 @@ def reachable_markings_bfs(net: PetriNet) -> List[Vec]:
     queue = deque([initial])
     all_markings: List[Vec] = []
 
-    # transitions may be a dict or an iterable of IDs; list(...) materializes it
     transitions = list(net.transitions)
 
     while queue:
@@ -267,14 +244,6 @@ def reachable_markings_bfs(net: PetriNet) -> List[Vec]:
 def reachable_markings_dfs(net: PetriNet) -> List[Vec]:
     """
     Enumerate all reachable markings using Depth-First Search (DFS).
-
-    DFS is implemented iteratively (using an explicit stack) to avoid
-    Python recursion depth limitations.
-
-    Returns
-    -------
-    List[Vec]
-        List of all reachable 1-safe markings (each marking is a Vec).
     """
     place_order, pid_to_index = build_place_index(net)
     pre_arcs, post_arcs = build_indexed_arcs(net, pid_to_index)
@@ -307,6 +276,7 @@ def print_reachability(
     net: PetriNet,
     markings: List[Vec],
     method_name: str,
+    duration: float = 0.0,  # [ADDED] duration parameter
 ) -> None:
     """
     Pretty-print the list of reachable markings computed by BFS/DFS.
@@ -315,7 +285,9 @@ def print_reachability(
     groups = auto_group_places(net)
 
     print(f"\n=== EXPLICIT REACHABILITY ({method_name.upper()}) ===")
-    print(f"Total reachable markings: {len(markings)}\n")
+    print(f"Total reachable markings: {len(markings)}")
+    # [ADDED] Print execution time
+    print(f"Execution time: {Color.YELLOW}{duration:.6f} seconds{Color.RESET}\n")
 
     for i, m in enumerate(markings):
         print(f"M{i}:")
@@ -330,13 +302,14 @@ def main() -> None:
     parser.add_argument(
         "--model",
         type=str,
-        default="../Standard PNMLs/diningPhilosophers.pnml",
+        default="../Standard PNMLs/file1_cabines_1safe.pnml",
         help="Path to PNML file (relative or absolute)",
     )
+    # [CHANGE]: Đổi default từ "bfs" thành "both"
     parser.add_argument(
         "--method",
         choices=["bfs", "dfs", "both"],
-        default="bfs",
+        default="both",
         help="Search method: bfs, dfs, or both",
     )
 
@@ -357,12 +330,18 @@ def main() -> None:
         return
 
     if args.method in ["bfs", "both"]:
+        # [ADDED] Measure BFS time
+        start_time = time.perf_counter()
         bfs_markings = reachable_markings_bfs(net)
-        print_reachability(net, bfs_markings, method_name="bfs")
+        end_time = time.perf_counter()
+        print_reachability(net, bfs_markings, method_name="bfs", duration=end_time - start_time)
 
     if args.method in ["dfs", "both"]:
+        # [ADDED] Measure DFS time
+        start_time = time.perf_counter()
         dfs_markings = reachable_markings_dfs(net)
-        print_reachability(net, dfs_markings, method_name="dfs")
+        end_time = time.perf_counter()
+        print_reachability(net, dfs_markings, method_name="dfs", duration=end_time - start_time)
 
 
 if __name__ == "__main__":
