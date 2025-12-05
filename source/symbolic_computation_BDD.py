@@ -160,7 +160,7 @@ def symbolic_reachability(
     """
     Task 3 – Tính tập reachable markings bằng BDD (`dd`).
     """
-    start = time.time()
+    start = time.perf_counter()
 
     (
         bdd,
@@ -212,7 +212,7 @@ def symbolic_reachability(
         reached = reached | new_states
         frontier = new_states
 
-    duration = time.time() - start
+    duration = time.perf_counter() - start
 
     # Số marking reachable
     # count() đếm số assignment thỏa mãn.
@@ -302,7 +302,7 @@ def run_explicit_search(
         method: str = "BFS",
 ) -> Tuple[int, float, int, List[Tuple[int, ...]]]:
     method_up = method.upper()
-    start = time.time()
+    start = time.perf_counter()
 
     if method_up == "BFS":
         markings = reachable_markings_bfs(net)
@@ -311,7 +311,7 @@ def run_explicit_search(
     else:
         raise ValueError(f"Unknown method: {method}")
 
-    duration = time.time() - start
+    duration = time.perf_counter() - start
     mem_bytes = estimate_memory_markings(markings)
     return len(markings), duration, mem_bytes, markings
 
