@@ -408,8 +408,8 @@ The parser in `parser.py` is designed to work with standard 1-safe PNML files:
 
 - Course: **MM-251 / CO2011 – Mathematical Modeling**  
 - Assignment theme: *Symbolic and Algebraic Reasoning in Petri Nets*  
-- Instructor: *[your course instructor / supervisor]*  
-- Implementation: *[Your group name, member names & student IDs]*  
+- Instructor: *Dr. Trinh Van Giang*  
+- Implementation: *Group 12*  
 - Tools:
   - Python **3.10.11**
   - BDD/ILP libraries (`dd`, `pyeda`, `pulp`, …) as used in the codebase
