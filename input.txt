@@ -1,0 +1,7 @@
+pnml: ../Standard PNMLs/diningPhilosophers.pnml
+
+task: 1,3,4
+
+explicit method: both
+
+weight vector: Phil1_Eating=100,Phil2_Eating=100,Phil3_Eating=100,Fork1=10,Fork2=10,Fork3=10
