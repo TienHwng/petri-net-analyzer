@@ -1,0 +1,28 @@
+diningPhilosophers:
+Weight vector 1: Phil1_Eating=100,Phil2_Eating=100,Phil3_Eating=100,Fork1=10,Fork2=10,Fork3=10
+Weight vector 2: Phil1_Thinking=34,Phil2_Thinking=-16,Phil3_Thinking=1,Phil1_Eating=-10,Phil2_Eating=80,Phil3_Eating=50,Fork1=100,Fork2=-20,Fork3=15
+
+diningPhilosophersFull:
+Weight vector 1: Phil1_Thinking=1,Phil2_Thinking=1,Phil3_Thinking=1,Phil4_Thinking=1,Phil5_Thinking=1,Phil6_Thinking=1,Phil1_Eating=3,Phil2_Eating=3,Phil3_Eating=3,Phil4_Eating=3,Phil5_Eating=3,Phil6_Eating=3,Fork1=1,Fork2=1,Fork3=1,Fork4=1,Fork5=1,Fork6=1
+Weight vector 2: Phil1_Thinking=10,Phil2_Thinking=-5,Phil3_Thinking=2,Phil4_Thinking=-8,Phil5_Thinking=4,Phil6_Thinking=-3,Phil1_Eating=10,Phil2_Eating=-4,Phil3_Eating=4,Phil4_Eating=-4,Phil5_Eating=5,Phil6_Eating=-5,Fork1=-2,Fork2=3,Fork3=-1,Fork4=5,Fork5=-4,Fork6=2
+
+file1_cabines_1safe:
+Weight vector 1: Entree=1,Attente_P=1,P_Panier=1,P_Cle1=1,P_Cle2=1,Cabines=3,Habillage=3,Entrer_Piscine=3,Piscine=3,Baignade=3,Deshabillage=3,R_Panier=1,R_Cles=2,Sortie=1,Fini=2
+Weight vector 2: Entree=10,Attente_P=10,P_Panier=5,P_Cle1=5,P_Cle2=5,Cabines=20,Habillage=20,Entrer_Piscine=20,Piscine=20,Baignade=20,Deshabillage=20,R_Panier=10,R_Cles=10,Sortie=10,Fini=10
+
+file2_token_ring_1safe:
+Weight vector 1: Token=-15,Go=51,Relay=-10,Wait1=16,Wait2=1,GoRelay=2,OutR=4,InCS=34,InR=-15,PReq=-15,CS=-15,EnterCS=-15,ExitCS=-15,Idle=-15,InT=-15,CSW=-15,GoIdle=-15,OutT=-15
+Weight vector 2: Token=4,Go=12,Relay=-5,Wait1=6,Wait2=42,GoRelay=8,OutR=42,InCS=19,InR=100,PReq=-50,CS=34,EnterCS=42,ExitCS=42,Idle=78,InT=42,CSW=42,GoIdle=42,OutT=42
+
+file3_access_policy_1safe:
+Weight vector 1: Users=7,Files=4,FilesBeingAccessed=9,Grant=3,Access=10
+Weight vector 2: Users=-9,Files=9,FilesBeingAccessed=9,Grant=0,Access=9
+
+file4_shared_memory_1safe:
+Weight vector 1: Active=20,Queue=20,Memory=-14,Ext_Bus=7,Begin_Own_Acc=6,End_Own_Acc=-14,Begin_Ext_Acc=13,End_Ext_Acc=-14,Req_Ext_Acc=-14,Ext_Mem_Acc=10,OwnMemAcc=-18
+Weight vector 2: Active=14,Queue=14,Memory=-18,Ext_Bus=10,Begin_Own_Acc=-4,End_Own_Acc=-18,Begin_Ext_Acc=5,End_Ext_Acc=-18,Req_Ext_Acc=-9,Ext_Mem_Acc=19,OwnMemAcc=14
+
+philo:
+Weight vector 1: FORK_1=40,FORK_2=57,FORK_3=3,FORK_4=38,FORK_5=9,FORK_6=0,THINK_1=-33,THINK_2=-38,THINK_3=-48,THINK_4=40,THINK_5=-23,THINK_6=-1,EAT_1=11,EAT_3=45,EAT_2=60,EAT_4=30,EAT_5=18,EAT_6=8,WAIT_LEFT_FORK_1=-30,WAIT_LEFT_FORK_2=3,WAIT_LEFT_FORK_3=19,WAIT_LEFT_FORK_4=-8,WAIT_LEFT_FORK_5=90,WAIT_LEFT_FORK_6=8,WAIT_RIGHT_FORK_1=11,WAIT_RIGHT_FORK_2=19,WAIT_RIGHT_FORK_3=-12,WAIT_RIGHT_FORK_4=-6,WAIT_RIGHT_FORK_5=-20,WAIT_RIGHT_FORK_6=-1
+Weight vector 2: FORK_1=-23,FORK_2=-7,FORK_3=10,FORK_4=20,FORK_5=80,FORK_6=170,THINK_1=6,THINK_2=8,THINK_3=-9,THINK_4=12,THINK_5=-7,THINK_6=-12,EAT_1=2,EAT_3=-8,EAT_2=-12,EAT_4=16,EAT_5=21,EAT_6=13,WAIT_LEFT_FORK_1=12,WAIT_LEFT_FORK_2=-15,WAIT_LEFT_FORK_3=-11,WAIT_LEFT_FORK_4=-4,WAIT_LEFT_FORK_5=13,WAIT_LEFT_FORK_6=-4,WAIT_RIGHT_FORK_1=3,WAIT_RIGHT_FORK_2=1,WAIT_RIGHT_FORK_3=-1,WAIT_RIGHT_FORK_4=8,WAIT_RIGHT_FORK_5=1,WAIT_RIGHT_FORK_6=5
+
