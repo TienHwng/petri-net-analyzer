@@ -83,9 +83,9 @@ def validate_petrinet(net: PetriNet) -> bool:
     for p_id in net.places:
         if p_id not in connected_places:
             print(
-                f"{Color.RED}❌ Error: Place '{net.places[p_id].name}' is isolated (no arcs connected){Color.RESET}"
+                f"{Color.YELLOW}❌ Warning: Place '{net.places[p_id].name}' is isolated (no arcs connected){Color.RESET}"
             )
-            net.is_valid = False
+            net.is_valid = True
 
     return net.is_valid
 
