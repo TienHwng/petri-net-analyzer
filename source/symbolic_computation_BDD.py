@@ -274,23 +274,50 @@ def estimate_memory_bdd(bdd_manager: Any) -> int:
 # Helper Class for BDD Management (Interface Adapter)
 # -------------------------------------------------------------
 class BDDManagerAdapter:
-    def __init__(self, bdd_instance):
+    def __init__(self, bdd_instance, var_name_map=None):
         self.bdd = bdd_instance
+        # Map: 'x_p1' -> 'Phil1_Thinking'
+        self.var_name_map = var_name_map if var_name_map is not None else {}
 
     def to_dnf_string(self, u: Any) -> str:
         """
-        Convert node 'u' to a string expression.
-        'dd' có hàm to_expr trả về string biểu thức logic.
+        Chuyển đổi node BDD 'u' sang dạng DNF với tên Place thực tế.
+        Dạng: (Fork1 & Phil1_Thinking) | (~Fork1 & Phil1_Eating) ...
         """
-        return self.bdd.to_expr(u)
+        if u == self.bdd.false:
+            return "FALSE"
+        if u == self.bdd.true:
+            return "TRUE"
 
-    # Các hàm wrapper để tương thích với các task khác nếu cần
+        clauses = []
+        
+        # pick_iter trả về danh sách các biến
+        for assignment in self.bdd.pick_iter(u):
+            # Sắp xếp theo tên biến gốc (x_p1, x_p2...) để giữ thứ tự nhất quán
+            sorted_vars = sorted(assignment.keys(), key=lambda x: (len(x), x))
+            
+            literals = []
+            for var_code in sorted_vars:
+                val = assignment[var_code]
+                
+                # Lấy tên thật từ map, nếu không có thì dùng tên biến (x_p...)
+                real_name = self.var_name_map.get(var_code, var_code)
+                
+                if val:
+                    literals.append(real_name)          # Ví dụ: Fork1
+                else:
+                    literals.append(f"~{real_name}")    # Ví dụ: ~Fork1
+            
+            # Tạo chuỗi cho 1 marking
+            clause_str = "(" + " & ".join(literals) + ")"
+            clauses.append(clause_str)
+
+        # Nối các marking lại
+        return "\n| ".join(clauses)
+
     def land(self, u, v): return u & v
-
     def lor(self, u, v): return u | v
-
     def lnot(self, u): return ~u
-
     def var(self, name): return self.bdd.var(name)
 
 
@@ -328,8 +355,11 @@ def run_symbolic_search(
     bdd_time = float(stats["runtime_seconds"])
     bdd_mem = estimate_memory_bdd(bdd_manager)
 
-    # Tạo Adapter để code main gọi được các hàm như to_dnf_string
-    mgr = BDDManagerAdapter(bdd_manager)
+    # Lấy map tên biến -> tên place thực tế
+    var_map = aux.get("var_to_place_name", {})
+
+    # TRUYỀN var_map VÀO ĐÂY
+    mgr = BDDManagerAdapter(bdd_manager, var_map)
 
     return bdd_cnt, bdd_time, bdd_mem, reached_node, mgr
 
@@ -391,7 +421,7 @@ if __name__ == "__main__":
 
     # --- IN BDD FUNCTION DẠNG DỄ ĐỌC ---
     print("\n" + "=" * 40)
-    print(f"{Color.CYAN}--- SYMBOLIC BDD FUNCTION (Expression Form) ---{Color.RESET}")
+    print(f"{Color.CYAN}--- SYMBOLIC BDD FUNCTION ---{Color.RESET}")
     if bdd_cnt <= 50:
         try:
             print(bdd_mgr.to_dnf_string(bdd_S))
