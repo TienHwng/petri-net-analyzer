@@ -14,6 +14,10 @@ source/__pycache__/
 latex/
 latex template/
 
-# Junk Folder
+# Temp Folder
+temp/
+
+# Junk Files
+.DS_Store
 note.txt
 todo.txt

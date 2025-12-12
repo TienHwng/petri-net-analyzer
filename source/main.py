@@ -17,6 +17,7 @@ except ImportError as e:
     print("Ensure all python files (parser, reachability, etc.) are in the same folder.")
     sys.exit(1)
 
+
 class Color:
     GREEN = "\033[92m"
     BLUE = "\033[94m"
@@ -25,6 +26,23 @@ class Color:
     RED = "\033[91m"
     RESET = "\033[0m"
     BOLD = "\033[1m"
+
+
+# =========================
+# Pretty printing helpers
+# =========================
+def bar(char: str = "─", n: int = 60):
+    print(char * n)
+
+
+def header(text: str):
+    print(f"\n\n{Color.BLUE}{Color.BOLD}{text}{Color.RESET}")
+    bar()
+
+
+def kv(key: str, val: str, w: int = 18):
+    print(f"{Color.CYAN}{key:<{w}}{Color.RESET}: {val}")
+
 
 def parse_config_file(filepath: str) -> Dict[str, Any]:
     """Parses input.txt into a dictionary."""
@@ -41,8 +59,9 @@ def parse_config_file(filepath: str) -> Dict[str, Any]:
 
     with open(filepath, 'r') as f:
         for line in f:
-            line = line.split('#')[0].strip() # Remove comments
-            if not line: continue
+            line = line.split('#')[0].strip()  # Remove comments
+            if not line:
+                continue
 
             if ':' in line:
                 key, value = line.split(':', 1)
@@ -71,23 +90,57 @@ def parse_config_file(filepath: str) -> Dict[str, Any]:
 
     return config
 
+
 def resolve_path(user_path: str) -> str:
-    """Resolves relative or absolute paths safely."""
-    if os.path.exists(user_path): return user_path
-    base_dir = os.path.dirname(os.path.abspath(__file__))
-    joined_path = os.path.join(base_dir, user_path)
-    if os.path.exists(joined_path): return joined_path
+    """
+    Resolve PNML path with priorities:
+    1) user_path as-is (absolute or relative to current working directory)
+    2) relative to script folder (souce/)
+    3) relative to sibling folder: <project_root>/Standard PNMLs/
+    4) if user_path is only a filename, walk Standard PNMLs/ to find it
+    """
+    if not user_path:
+        return None
+
+    # 1) As provided (absolute OR relative to CWD)
+    if os.path.exists(user_path):
+        return os.path.abspath(user_path)
+
+    # Script folder (where this .py is): .../souce
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+
+    # 2) Relative to script_dir
+    cand = os.path.join(script_dir, user_path)
+    if os.path.exists(cand):
+        return os.path.abspath(cand)
+
+    # Project root is parent of souce/
+    project_root = os.path.dirname(script_dir)
+
+    # 3) Sibling folder: Standard PNMLs
+    pnml_root = os.path.join(project_root, "Standard PNMLs")
+    cand = os.path.join(pnml_root, user_path)
+    if os.path.exists(cand):
+        return os.path.abspath(cand)
+
+    # 4) If user_path is just a filename, walk Standard PNMLs recursively
+    is_filename_only = not any(sep in user_path for sep in ("/", "\\"))
+    if is_filename_only and os.path.isdir(pnml_root):
+        target = user_path.lower()
+        for dirpath, _, filenames in os.walk(pnml_root):
+            for fn in filenames:
+                if fn.lower() == target:
+                    return os.path.abspath(os.path.join(dirpath, fn))
+
     return None
 
-# =============================================================================
-# TASK RUNNERS
-# =============================================================================
 
 def run_task_1(net, pnml_path):
     print(f"\n{Color.BOLD}=== TASK 1: PARSING PNML ==={Color.RESET}")
     if net.is_valid:
         print(f"{Color.GREEN}✅ Petri Net consistency check successfully.{Color.RESET}")
         pn_parser.print_petrinet_info(net)
+
 
 def run_task_2(net, method='bfs'):
     print(f"\n{Color.BOLD}=== TASK 2: EXPLICIT REACHABILITY ==={Color.RESET}")
@@ -270,7 +323,7 @@ def run_task_5(net, bdd_data, weight_str):
 
         print("\n--- Best Markings ---")
         groups = reachability.auto_group_places(net)
-        
+
         # Limit print to 10
         limit = 10
         for i, sol in enumerate(opt_sym_solutions[:limit]):
@@ -280,54 +333,236 @@ def run_task_5(net, bdd_data, weight_str):
                 # Convert dict value (True/False or 1/0) to integer 1/0
                 val = 1 if sol.get(var) else 0
                 vec.append(val)
-                
+
             print(f"{Color.YELLOW}Option {i + 1}:{Color.RESET}")
             print(reachability.pretty_marking_vec(tuple(vec), net, place_order, groups))
             print("-" * 40)
-            
+
         if len(opt_sym_solutions) > limit:
             print(f"... and {len(opt_sym_solutions) - limit} more optimal markings.")
-            
+
     else:
         print(f"❌ FAIL: Mismatch! Explicit={opt_exp_score}, Symbolic={opt_sym_score}")
 
 
+def prompt(msg: str, default: str = None, allow_empty: bool = False) -> str:
+    """Prompt user for input with optional default."""
+    if default is not None:
+        full = f"{msg} [{default}]: "
+    else:
+        full = f"{msg}: "
+    while True:
+        s = input(full).strip()
+        if not s and default is not None:
+            return default
+        if not s and allow_empty:
+            return ""
+        if s:
+            return s
+        print(f"{Color.RED}❌ Input cannot be empty.{Color.RESET}")
+
+
+def parse_tasks_input(s: str) -> List[int]:
+    s = s.strip().lower()
+    if s == "all":
+        return [1, 2, 3, 4, 5]
+    parts = [p.strip() for p in s.split(",") if p.strip()]
+    tasks = []
+    for p in parts:
+        try:
+            v = int(p)
+        except ValueError:
+            raise ValueError("Tasks must be numbers (1-5) or 'all'.")
+        if v < 1 or v > 5:
+            raise ValueError("Task IDs must be in range 1..5.")
+        tasks.append(v)
+    return sorted(list(set(tasks)))
+
+
+def find_pnml_files(base_dir: str, search_subdirs: List[str] = None) -> List[str]:
+    """Search for .pnml files under base_dir (or selected subfolders). Return relative paths."""
+    if search_subdirs is None:
+        roots = [base_dir]
+    else:
+        roots = [os.path.join(base_dir, d) for d in search_subdirs]
+
+    results = []
+    for root in roots:
+        if not os.path.isdir(root):
+            continue
+        for dirpath, _, filenames in os.walk(root):
+            for fn in filenames:
+                if fn.lower().endswith(".pnml"):
+                    abs_path = os.path.join(dirpath, fn)
+                    rel_path = os.path.relpath(abs_path, base_dir)
+                    results.append(rel_path)
+    results.sort()
+    return results
+
+
+def print_run_guide(base_dir: str, std_pnml_dir: str):
+    header("PETRI NET TOOL — RUN GUIDE")
+
+    print("Run:")
+    print(f"  {Color.YELLOW}python main.py <config_file>.txt{Color.RESET}   (config file mode)")
+    print(f"  {Color.YELLOW}python main.py{Color.RESET}                     (interactive mode)")
+    print(f"{Color.CYAN}Note:{Color.RESET} config file name is flexible (not required to be 'input.txt').")
+    bar()
+
+    kv("Script folder", base_dir)
+    kv("PNML folder", std_pnml_dir)
+    bar()
+
+    print("Config file format (lines 'key: value'):")
+    print("  • pnml: <path or filename>")
+    print("  • task: all  (or 1,2,3,4,5)")
+    print("  • explicit method: bfs|dfs|both   (optional)")
+    print("  • weight vector: ...             (optional)")
+    bar()
+
+    print("PNML path can be:")
+    print("  • Absolute path: /home/user/models/a.pnml")
+    print("  • Relative inside Standard PNMLs: sub/a.pnml")
+    print("  • Filename only: a.pnml (auto-search in Standard PNMLs)")
+    bar()
+
+    print("Tasks:")
+    print("  • 1 = Parse")
+    print("  • 2 = Explicit Reachability")
+    print("  • 3 = Symbolic(BDD)")
+    print("  • 4 = Deadlock")
+    print("  • 5 = Optimization")
+    print("Explicit method (Task 2): bfs / dfs / both")
+    bar()
+
+
+def interactive_config(std_pnml_dir: str) -> Dict[str, Any]:
+    """Ask user for configuration interactively (same flow as main2.py)."""
+    header("INTERACTIVE MODE")
+    print("You will enter the configuration directly in the terminal (no <config_file>.txt required).")
+
+    # Optional: choose where to scan for PNML files
+    print("\nPNML discovery:")
+    print("  • I can scan for .pnml files and show suggestions.")
+    scan_choice = prompt("Scan for PNML files? (y/n)", default="y").lower()
+
+    suggestions = []
+    if scan_choice in ("y", "yes"):
+        # Scan Standard PNMLs folder (and common subfolders if present)
+        candidates = ["models", "pnml", "data", "examples"]
+        suggestions = find_pnml_files(std_pnml_dir, search_subdirs=candidates)
+        if not suggestions:
+            # Fallback: scan the entire Standard PNMLs
+            suggestions = find_pnml_files(std_pnml_dir)
+
+        if suggestions:
+            header(f"PNML FILES FOUND: {len(suggestions)} (showing up to 15)")
+            for i, rel in enumerate(suggestions[:15], start=1):
+                print(f"  {Color.YELLOW}{i:>2}.{Color.RESET} {rel}")
+            if len(suggestions) > 15:
+                print(f"  ... and {len(suggestions) - 15} more")
+            print(f"{Color.CYAN}Tip:{Color.RESET} type the index (e.g., 1) or type a path.\n")
+        else:
+            print(f"{Color.YELLOW}⚠️ No .pnml files found by scanning 'Standard PNMLs'.{Color.RESET}")
+
+    pnml_in = prompt("Enter PNML file path (or index from the list above)")
+    # If user typed an index, map to suggestion
+    if pnml_in.isdigit() and suggestions:
+        idx = int(pnml_in)
+        if 1 <= idx <= len(suggestions):
+            pnml_in = suggestions[idx - 1]
+            print(f"Selected: {Color.GREEN}{pnml_in}{Color.RESET}")
+
+    tasks_raw = prompt("Select tasks (all or comma-separated 1-5)", default="all")
+    while True:
+        try:
+            tasks = parse_tasks_input(tasks_raw)
+            break
+        except ValueError as e:
+            print(f"{Color.RED}❌ {e}{Color.RESET}")
+            tasks_raw = prompt("Re-enter tasks", default="all")
+
+    weight_str = prompt("Enter weight vector (press Enter for Auto)", default="", allow_empty=True).strip()
+    method = prompt("Select explicit method (bfs/dfs/both)", default="bfs").strip().lower()
+    if method not in ["bfs", "dfs", "both"]:
+        print(f"{Color.YELLOW}⚠️ Unknown explicit method '{method}', defaulting to 'bfs'.{Color.RESET}")
+        method = "bfs"
+
+    return {
+        "pnml": pnml_in,
+        "tasks": tasks,
+        "weights": weight_str if weight_str else None,
+        "explicit_method": method
+    }
+
+
 def main():
+    # Keep backward compatibility: optional input.txt
     parser = argparse.ArgumentParser(description="Petri Net Tool: Integrated Runner")
-    parser.add_argument("input_file", type=str, help="Path to input.txt config file")
+    parser.add_argument("input_file", nargs="?", default=None, help="Path to <config_file>.txt config file (optional)")
     args = parser.parse_args()
 
-    config = parse_config_file(args.input_file)
-    pnml_raw = config['pnml']
+    # base_dir = folder chứa main (souce/)
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    project_root = os.path.dirname(base_dir)
+    std_pnml_dir = os.path.join(project_root, "Standard PNMLs")
+
+    print_run_guide(base_dir, std_pnml_dir)
+
+    # --- Load config: file mode or interactive mode ---
+    if args.input_file:
+        config = parse_config_file(args.input_file)
+    else:
+        config = interactive_config(std_pnml_dir)
+
+    # --- Resolve PNML path ---
+    pnml_raw = config.get("pnml")
     if not pnml_raw:
-        print(f"{Color.RED}❌ Error: 'pnml' path missing in input file.{Color.RESET}")
+        print(f"{Color.RED}❌ Error: Missing 'pnml' configuration.{Color.RESET}")
         sys.exit(1)
 
     pnml_path = resolve_path(pnml_raw)
+
+    # If interactive returned a path relative to Standard PNMLs, ensure it's resolved
+    if not pnml_path and os.path.isdir(std_pnml_dir):
+        cand = os.path.join(std_pnml_dir, pnml_raw)
+        if os.path.exists(cand):
+            pnml_path = os.path.abspath(cand)
+
     if not pnml_path:
         print(f"{Color.RED}❌ Error: PNML file '{pnml_raw}' not found.{Color.RESET}")
+        print(f"Hint: Standard PNMLs folder is:\n  {std_pnml_dir}")
+        print("Try an absolute path, or a relative path inside 'Standard PNMLs', or just a filename.")
         sys.exit(1)
 
-    tasks = sorted(list(set(config['tasks'])))
-    print(f"{Color.BLUE}--- CONFIGURATION ---{Color.RESET}")
-    print(f"Model: {pnml_path}")
-    print(f"Tasks: {tasks}")
-    print(f"Weights: {config['weights'] if config['weights'] else 'Auto'}")
-    print(f"Explicit Method: {config['explicit_method'].upper()}")
-    print("-" * 30)
+    # --- Print configuration summary ---
+    tasks = sorted(list(set(config.get("tasks", []))))
+    if not tasks:
+        print(f"{Color.YELLOW}⚠️ No tasks selected. Defaulting to ALL (1-5).{Color.RESET}")
+        tasks = [1, 2, 3, 4, 5]
 
-    # Global parsing for shared usage
+    header("CONFIGURATION")
+    kv("Model (PNML)", pnml_path)
+    kv("Tasks", ", ".join(map(str, tasks)))
+    kv("Weights", config['weights'] if config.get('weights') else "Auto")
+    kv("Method", config.get('explicit_method', 'bfs').upper())
+    bar()
+    print("")
+
+    # --- Parse net once ---
     net = pn_parser.parse_pnml(pnml_path)
-    if not net: sys.exit(1)
+    if not net:
+        sys.exit(1)
 
     bdd_S = None
     bdd_mgr = None
 
+    # --- Run tasks ---
     if 1 in tasks:
         run_task_1(net, pnml_path)
 
     if 2 in tasks:
-        run_task_2(net, config['explicit_method'])
+        run_task_2(net, config.get("explicit_method", "bfs"))
 
     if 3 in tasks:
         bdd_S, bdd_mgr = run_task_3(net)
@@ -336,10 +571,12 @@ def main():
         run_task_4(net)
 
     if 5 in tasks:
-        # Note: We pass bdd_S/bdd_mgr but run_task_5 re-runs search for safety
-        run_task_5(net, (bdd_S, bdd_mgr), config['weights'])
+        run_task_5(net, (bdd_S, bdd_mgr), config.get("weights"))
 
-    print(f"\n{Color.GREEN}=== ALL TASKS COMPLETED ==={Color.RESET}")
+    print("")
+    bar()
+    print(f"{Color.GREEN}{Color.BOLD}✅ ALL TASKS COMPLETED{Color.RESET}")
+    bar()
 
 
 if __name__ == "__main__":
