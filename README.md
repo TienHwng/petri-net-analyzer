@@ -8,7 +8,31 @@ The project provides:
 - Symbolic reachability using BDDs
 - Deadlock detection (symbolic intersection + CEGAR reference)
 - Optimization over reachable markings
-- A unified `main.py` driver to run all tasks from a simple config file
+- A unified `main.py` driver to run all tasks from a simple config file (or interactive mode)
+
+---
+
+## Table of Contents
+
+- [1. Project Overview](#1-project-overview)
+- [2. Python Version & Dependencies](#2-python-version--dependencies)
+  - [2.1. Virtual Environment (recommended)](#21-virtual-environment-recommended)
+- [3. Repository Structure](#3-repository-structure)
+- [4. Assignment Task Mapping](#4-assignment-task-mapping)
+- [5. Configuration File (Config `.txt`)](#5-configuration-file-config-txt)
+  - [5.1. Format](#51-format)
+  - [5.2. Example Config File](#52-example-config-file)
+- [6. Quick Start (For Instructor / TA)](#6-quick-start-for-instructor--ta)
+  - [6.1. Run everything using a config file](#61-run-everything-using-a-config-file-recommended)
+  - [6.2. Run everything using interactive mode](#62-run-everything-using-interactive-mode-no-config-file)
+- [7. How to Run (Detailed)](#7-how-to-run-detailed)
+  - [7.1. Running the unified driver (`main.py`)](#71-running-the-unified-driver-mainpy)
+  - [7.2. Running individual modules](#72-running-individual-modules-for-debugging--demo)
+  - [7.3. Benchmark runner (`benchmark_runner.py`)](#73-benchmark-runner-testbenchmark_runnerpy)
+- [8. Adding New PNML Models](#8-adding-new-pnml-models)
+- [9. Limitations & Assumptions](#9-limitations--assumptions)
+- [10. Credits](#10-credits)
+
 
 ---
 
@@ -27,7 +51,7 @@ Our implementation:
 - Uses **BDD-based symbolic representations** to compute the reachable state space.
 - Detects deadlocks by intersecting the reachable set with a “no enabled transition” condition.
 - Optionally runs an **optimization pipeline** combining explicit and symbolic analysis.
-- Exposes a single entry point: `main.py`, which reads a simple `input.txt` configuration and runs the selected tasks.
+- Exposes a single entry point: `main.py`, which reads a simple configuration file and runs the selected tasks.
 
 ---
 
@@ -53,7 +77,7 @@ py -3.10 --version   # must print Python 3.10.11
 ```
 
 - For Unix/macOS (pyenv)
-```
+```bash
 pyenv install 3.10.11
 pyenv local 3.10.11
 python --version     # Python 3.10.11
@@ -68,32 +92,32 @@ python -m venv .venv
 ```
 
 or:
-```
+```bash
 py -3.10 -m venv .venv
 ```
 
 Activate:
- - For Windows:
-```
+
+- Windows:
+```bash
 .\.venv\Scripts\activate
 ```
 
- - For Linux/macOS:
-```
+- Linux/macOS:
+```bash
 source .venv/bin/activate
 ```
 
-Upgrade pip and install dependencies
-```
+Upgrade pip and install dependencies:
+```bash
 pip install --upgrade pip
 pip install -r requirements.txt   # if provided
 ```
 
-If `requirements.txt` is not present, install the libraries used in your code, e.g.:
-
-- `dd` / `pyeda` – for BDD-based symbolic reasoning
-- `pulp` or equivalent – for ILP/optimization
-- `lxml` or standard `xml.etree.ElementTree` – for PNML parsing (already used in `parser.py`)
+If `requirements.txt` is not present, install the main libraries used:
+```bash
+pip install dd pyeda pulp
+```
 
 ---
 
@@ -115,41 +139,39 @@ MM-251-ASSIGNMENT/
 │   └── philo.pnml
 │
 ├── source/
-│   ├── parser.py                      # PNML → PetriNet, consistency checks, info printing
-│   ├── reachability.py                # Explicit BFS/DFS + pretty printers & utilities
-│   ├── symbolic_computation_BDD.py    # BDD-based reachability (dd)
-│   ├── symbolic_pyeda.py              # Alternative symbolic engine (PyEDA)
-│   ├── deadlock_detection.py          # Symbolic deadlock detection (intersection)
-│   ├── deadlock_detection_cegar.py    # CEGAR-based deadlock (reference/comparison)
-│   ├── optimization.py                # Optimization over reachable markings (Task 5)
+│   ├── parser.py
+│   ├── reachability.py
+│   ├── symbolic_computation_BDD.py
+│   ├── symbolic_pyeda.py
+│   ├── deadlock_detection.py
+│   ├── deadlock_detection_cegar.py
+│   ├── optimization.py
 │   └── main.py                        # ⭐ Integrated driver for Tasks 1–5
 │
 ├── test/
-│   └── benchmark_runner.py            # Benchmark multiple PNML models (optional)
+│   └── benchmark_runner.py
 │
-└── README.md                          # This document
+└── README.md
 ```
 
 ---
 
 ## 4. Assignment Task Mapping
 
-The assignment describes 6 tasks (parsing, explicit reachability, symbolic reachability, deadlock, optimization, report). Roughly:
-
 | Task | Description (from assignment)                          | Implementation in this repo                          |
 |------|--------------------------------------------------------|------------------------------------------------------|
-| 1    | Parse PNML → internal Petri net                        | `source/parser.py` (`parse_pnml`, `PetriNet`, checks) |
-| 2    | Explicit reachability (BFS / DFS)                      | `source/reachability.py` (`reachable_markings_bfs/dfs`) |
-| 3    | Symbolic reachability via BDD                          | `source/symbolic_computation_BDD.py` (and `symbolic_pyeda.py`) |
+| 1    | Parse PNML → internal Petri net                        | `source/parser.py` |
+| 2    | Explicit reachability (BFS / DFS)                      | `source/reachability.py` |
+| 3    | Symbolic reachability via BDD                          | `source/symbolic_computation_BDD.py` |
 | 4    | Deadlock detection (logical + ILP / CEGAR-style)       | `source/deadlock_detection.py`, `deadlock_detection_cegar.py` |
 | 5    | Optimization over reachable markings (optional)        | `source/optimization.py` and `run_task_5` in `main.py` |
-| 6    | Report & discussion                                   | Provided as a separate PDF report (not in this repo) |
+| 6    | Report & discussion                                   | Separate PDF report |
 
-`main.py` ties these modules together and reproduces the behavior of the individual scripts while allowing everything to be configured via an external `input.txt` file.
+`main.py` ties these modules together and reproduces the behavior of the individual scripts while allowing everything to be configured via an external config file.
 
 ---
 
-## 5. Configuration File (`input.txt`)
+## 5. Configuration File (Config `.txt`)
 
 Instead of passing long command-line arguments, `main.py` uses a simple text configuration file.
 
@@ -163,43 +185,102 @@ Instead of passing long command-line arguments, `main.py` uses a simple text con
 
 | Key             | Meaning                                             | Example                         |
 |-----------------|-----------------------------------------------------|---------------------------------|
-| `PNML`          | Path to the PNML model                              | `PNML: ../Standard PNMLs/philo.pnml` |
+| `PNML`          | Path (or filename) of the PNML model                | `PNML: ../Standard PNMLs/philo.pnml` |
 | `Task`          | Which tasks to run (`1–5` or `all`)                 | `Task: all` or `Task: 1,2,4`    |
 | `Weight Vector` | Weight specification for optimization (Task 5)      | `Weight Vector: P1=10,P2=5`     |
 | `Explicit Method` | Explicit method for Task 2 (`bfs`, `dfs`, `both`) | `Explicit Method: both`         |
 
-### 5.2. Example `input.txt`
+✅ **Note:** the config file name is **NOT fixed**.  
+You may name it `input.txt`, `config.txt`, `run.txt`, etc.
+
+### 5.2. Example config file
 
 ```text
 # Example configuration for main.py
 PNML: ../Standard PNMLs/diningPhilosophers.pnml
 
-# Run all implemented tasks
 Task: all
-
-# Optional weights for Task 5 (Optimization)
-# If empty, optimization.py will auto-assign weights
 Weight Vector: P1=10, P2=5
-
-# Explicit reachability method for Task 2
 Explicit Method: both
 ```
 
 `main.py` will:
 
-- Parse this file using `parse_config_file()`  
-- Resolve the PNML path using `resolve_path()` (relative to `main.py` and the current working directory)  
-- Run the selected tasks in ascending order (1 → 5)
+- Parse this file using `parse_config_file()`
+- Resolve the PNML path using `resolve_path()`:
+  - It accepts absolute paths
+  - It accepts paths relative to `source/`
+  - It can also find PNMLs inside the folder `Standard PNMLs/` (sibling folder of `source/`)
+- Run selected tasks in ascending order (1 → 5)
 
 ---
 
-## 6. How to Run
+## 6. Quick Start (For Instructor / TA)
 
-### 6.1. Running the unified driver (`main.py`)
+This section shows how to run the **full pipeline** (Tasks 1–5) quickly.
 
-Recommended way to use the project:
+### 6.1. Run everything using a config file (recommended)
 
-1. **Create / edit** a config file, e.g., `input.txt`, as described in [Section 5](#5-configuration-file-inputtxt).
+From the repository root:
+
+```bash
+cd source
+python main.py ../input.txt
+```
+
+- `../input.txt` can be any config file name/path (not required to be `input.txt`)
+- The PNML path inside config can be absolute or relative
+
+### 6.2. Run everything using interactive mode (no config file)
+
+If you run without providing a config file:
+
+```bash
+cd source
+python main.py
+```
+
+The program will:
+
+- Scan `Standard PNMLs/` and list available `.pnml` files
+- Ask you to select:
+  - PNML model
+  - Task list (or `all`)
+  - Explicit method (bfs/dfs/both)
+  - Weights (optional)
+
+After execution, the program first prints a run guide, including:
+- How to run in config-file mode and interactive mode
+- The detected script folder (`source/`) and PNML folder (`Standard PNMLs/`)
+- The expected format of the configuration file
+- Supported tasks and explicit methods
+
+If no config file is provided, the program then enters an interactive mode,
+where the user is prompted to:
+- Scan and select a PNML model
+- Choose which tasks to run
+- Select the explicit reachability method
+- Optionally specify a weight vector for optimization
+
+Here is an example:
+
+[![Interactive mode output](docs/run_guide.png)](docs/run_guide.png)
+
+After printing the run guide, the tool enters **Interactive Mode**.  
+TAs can follow the prompts to choose the PNML model and select which tasks to run.  
+Press `Enter` to quickly accept the default option (shown in brackets).
+
+Here is an example of the inputs expected in Interactive Mode:
+
+[![Interactive mode inputs](docs/interactive_inputs.png)](docs/interactive_inputs.png)
+
+---
+
+## 7. How to Run (Detailed)
+
+### 7.1. Running the unified driver (`main.py`)
+
+1. Create/edit a config file (any name), as described in Section 5.
 2. From the repository root:
 
 ```bash
@@ -209,197 +290,88 @@ python main.py ../input.txt
 
 Explanation:
 
-- `main.py` imports `parser`, `reachability`, `symbolic_computation_BDD`, `deadlock_detection`, `optimization` **as plain modules**, not as `source.*`.
-- Therefore, it is simplest to:
+- `main.py` imports `parser`, `reachability`, `symbolic_computation_BDD`, `deadlock_detection`, `optimization` as plain modules (not `source.*`).
+- Therefore, we recommend:
   - `cd source`
-  - Run `python main.py <path-to-input.txt>`
-
-Paths in `PNML:` can be absolute or relative (e.g. `../Standard PNMLs/philo.pnml`).
+  - run `python main.py <path-to-config-file>`
 
 ---
 
-### 6.2. Running individual modules (for debugging / demo)
+### 7.2. Running individual modules (for debugging / demo)
 
-Each main module can also be run standalone, using its own `argparse` interface.
-
-#### 6.2.1. Explicit reachability (`reachability.py`)
+#### 7.2.1. Explicit reachability (`reachability.py`)
 
 ```bash
 cd source
 python reachability.py --model ../Standard\ PNMLs/philo.pnml --method bfs
-# or:
 python reachability.py --model ../Standard\ PNMLs/philo.pnml --method dfs
 ```
 
-#### 6.2.2. Symbolic reachability (`symbolic_computation_BDD.py`)
+#### 7.2.2. Symbolic reachability (`symbolic_computation_BDD.py`)
 
 ```bash
 cd source
 python symbolic_computation_BDD.py --model ../Standard\ PNMLs/philo.pnml
 ```
 
-This script:
-
-- Runs explicit wrappers (BFS/DFS via `reachability.py`)
-- Builds BDD-based reachable set
-- Prints statistics (number of states, time, memory usage)
-
-#### 6.2.3. Deadlock detection (`deadlock_detection.py`)
+#### 7.2.3. Deadlock detection (`deadlock_detection.py`)
 
 ```bash
 cd source
 python deadlock_detection.py --model ../Standard\ PNMLs/philo.pnml
 ```
 
-This will:
-
-- Build `S_reach` via BDDs
-- Construct the dead condition formula
-- Intersect them to detect deadlocks
-- Extract one deadlock marking (if any), and pretty-print it
-
-A CEGAR-based implementation (`deadlock_detection_cegar.py`) can be used as a reference or comparison method.
-
-#### 6.2.4. Optimization (`optimization.py`)
+#### 7.2.4. Optimization (`optimization.py`)
 
 ```bash
 cd source
 python optimization.py --model ../Standard\ PNMLs/diningPhilosophers.pnml
-# With manual weights:
-python optimization.py --model ../Standard\ PNMLs/diningPhilosophers.pnml     --weights "P1=10,P2=5"
+python optimization.py --model ../Standard\ PNMLs/diningPhilosophers.pnml --weights "P1=10,P2=5"
 ```
-
-This script:
-
-- Builds a weight vector either automatically or from the `--weights` string
-- Runs explicit search for reachable markings
-- Runs symbolic search (BDD)
-- Verifies consistency and prints candidate optimal markings
-
-> `main.py` internally calls these functionalities via `run_task_2/3/4/5`, so in normal usage you only need `main.py`.
 
 ---
 
-### 6.3. Benchmark runner (`test/benchmark_runner.py`)
-
-There is a separate benchmark script under `test/` (not part of the core assignment API, but useful for evaluation):
+### 7.3. Benchmark runner (`test/benchmark_runner.py`)
 
 ```bash
 cd test
 python benchmark_runner.py --dir "../Standard PNMLs"
 ```
 
-It:
-
-- Finds all `.pnml` files in the given directory
-- For each model:
-  - Runs explicit search (BFS/DFS)
-  - Runs symbolic reachability
-  - Runs deadlock detection (symbolic + CEGAR, if available)
-- Prints three well-formatted tables:
-  - Reachability analysis (explicit vs symbolic)
-  - Symbolic deadlock results
-  - Performance comparison CEGAR vs symbolic intersection
-
-> Lưu ý: script này chỉnh `sys.path` để truy cập code trong `../source`.  
-> Do project **không dùng `__init__.py`**, không nên chạy kiểu `python -m test.benchmark_runner`; hãy chạy trực tiếp file như trên.
-
 ---
 
-## 7. Adding New PNML Models
+## 8. Adding New PNML Models
 
-To analyze a new Petri net:
+1. Put your `.pnml` file into:
 
-1. **Add your PNML file**  
-   Put your `.pnml` file into:
+```text
+Standard PNMLs/
+```
 
-   ```text
-   Standard PNMLs/
-   ```
+2. Update your config file:
 
-   For example: `Standard PNMLs/my_model.pnml`.
+```text
+PNML: ../Standard PNMLs/my_model.pnml
+Task: all
+Explicit Method: both
+```
 
-2. **Update your config (`input.txt`)**  
-   Set the `PNML` field to point to your new model:
+3. Run:
 
-   ```text
-   PNML: ../Standard PNMLs/my_model.pnml
-   Task: all
-   Explicit Method: both
-   ```
-
-3. **Run via `main.py`**
-
-   ```bash
-   cd source
-   python main.py ../input.txt
-   ```
-
-4. (Optional) **Run benchmarks** on a folder of PNMLs:
-
-   ```bash
-   cd test
-   python benchmark_runner.py --dir "../Standard PNMLs"
-   ```
-
-The parser in `parser.py` is designed to work with standard 1-safe PNML files:
-
-- Places, transitions, arcs are extracted from the XML tree.
-- Initial marking is read from `initialMarking` nodes.
-- Some consistency checks are performed (e.g., dead transitions, missing arcs).
-
----
-
-## 8. Implementation Notes
-
-- **No package-style imports**
-
-  - There is **no `__init__.py`** in `source/` or `test/`.
-  - All imports are simple module imports: `import parser`, `import reachability`, …
-  - This is intentional: the project is meant to be run with simple `python <file>.py` calls, not as an installed package.
-
-- **Internal data model**
-
-  - `parser.py` defines classes such as `Place`, `Transition`, `Arc`, `PetriNet`.
-  - The Petri net stores:
-    - A dictionary of places
-    - A dictionary of transitions
-    - Input/output incidence via `input_arcs`, `output_arcs`
-    - Initial marking as a mapping from places to token counts
-
-- **Explicit reachability**
-
-  - `reachability.py` works on `PetriNet` and uses BFS/DFS to generate reachable markings.
-  - Markings are represented as tuples/vectors in a fixed place order.
-  - Helper functions:
-    - `build_place_index`, `auto_group_places`, `pretty_marking_vec`, `print_reachability`.
-
-- **Symbolic reachability**
-
-  - `symbolic_computation_BDD.py` encodes each place as a Boolean variable (1-safe).
-  - Markings correspond to assignments of these variables.
-  - Uses a BDD manager to compute the reachable set via fixpoint iteration.
-
-- **Deadlock logic**
-
-  - `deadlock_detection.py` builds a BDD formula representing the “no enabled transition” condition.
-  - Deadlock set = `S_reach ∧ Dead_Condition`.
-  - An example marking is extracted from the BDD and converted back into a human-readable format using reachability helpers.
-
-- **Optimization**
-
-  - `optimization.py` defines weight parsing, automatic weight assignment, and a full pipeline that combines explicit and symbolic results.
-  - `main.py` calls into this pipeline from `run_task_5`.
+```bash
+cd source
+python main.py ../input.txt
+```
 
 ---
 
 ## 9. Limitations & Assumptions
 
-- The code assumes **1-safe Petri nets**; there is no full general safety-checker.
-- Very large models may cause:
-  - State space explosion in explicit reachability.
-  - Memory issues in BDD-based symbolic reachability.
-- Python version is **strictly pinned** to `3.10.11` for stability.
+- The code assumes **1-safe Petri nets**.
+- Massive models may cause:
+  - State explosion for explicit BFS/DFS
+  - Memory issues for symbolic BDD reachability
+- Python version is **strictly pinned** to `3.10.11` because the assignment was developed and tested on this version; using other versions may cause dependency/import issues and inconsistent results.
 - The project is not packaged as a Python module; all scripts are run directly.
 
 ---
@@ -412,4 +384,4 @@ The parser in `parser.py` is designed to work with standard 1-safe PNML files:
 - Implementation: *Group 12*  
 - Tools:
   - Python **3.10.11**
-  - BDD/ILP libraries (`dd`, `pyeda`, `pulp`, …) as used in the codebase
+  - BDD/ILP libraries (`dd`, `pyeda`, `pulp`, …)

@@ -432,7 +432,7 @@ def print_run_guide(base_dir: str, std_pnml_dir: str):
     print("  • 3 = Symbolic(BDD)")
     print("  • 4 = Deadlock")
     print("  • 5 = Optimization")
-    print("Explicit method (Task 2): bfs / dfs / both")
+    print(f"{Color.CYAN}Note:{Color.RESET} Explicit method (Task 2): bfs / dfs / both")
     bar()
 
 
@@ -577,6 +577,7 @@ def main():
     bar()
     print(f"{Color.GREEN}{Color.BOLD}✅ ALL TASKS COMPLETED{Color.RESET}")
     bar()
+    print("")
 
 
 if __name__ == "__main__":
