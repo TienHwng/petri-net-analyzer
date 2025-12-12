@@ -2,7 +2,7 @@ import argparse
 import os
 import sys
 import time
-from typing import Dict, List, Tuple
+from typing import Any, Dict, List, Tuple
 
 # --- Import from your existing modules ---
 try:
@@ -18,7 +18,8 @@ try:
     )
 
     # Import symbolic search engine
-    from symbolic_computation_BDD import BDD, run_symbolic_search
+    # We import the new 'run_symbolic_search' which returns the dd manager adapter
+    from symbolic_computation_BDD import run_symbolic_search
 
 except ImportError as e:
     print(f"Import Error: {e}")
@@ -155,172 +156,73 @@ def solve_optimization_explicit(
 
 
 # =============================================================
-# 3. SYMBOLIC OPTIMIZATION (CORRECT DP ON BDD)
+# 3. SYMBOLIC OPTIMIZATION (EXHAUSTIVE ITERATION)
 # =============================================================
-
-
-def get_max_weight_dp(
-    bdd: BDD,
-    u: int,
-    level_weights: List[int],
-    suffix_gap: List[int],
-    memo: Dict[int, int],
-) -> int:
-    """
-    Recursive DP to find the maximum weight.
-    Handles 'Gaps' (skipped variables in BDD) by using precomputed suffix sums.
-    """
-    # 1. Base Cases
-    if u == 0:
-        return -float("inf")
-    if u == 1:
-        return 0
-    if u in memo:
-        return memo[u]
-
-    # 2. Node Info
-    lvl, low, high = bdd.nodes[u]
-
-    # Levels of children nodes (Handle terminal nodes 0/1 which are at 'limit' level)
-    lvl_low = bdd.nodes[low][0]
-    lvl_high = bdd.nodes[high][0]
-
-    # 3. Calculate Gain from Gaps (skipped levels)
-    # If levels are skipped between u and child, we implicitly choose '1' for any
-    # skipped variable that has positive weight to maximize score.
-    # Gap Gain = Sum of weights in range (lvl+1, child_lvl)
-    gain_gap_low = suffix_gap[lvl + 1] - suffix_gap[lvl_low]
-    gain_gap_high = suffix_gap[lvl + 1] - suffix_gap[lvl_high]
-
-    # 4. Recurse
-    val_low = get_max_weight_dp(bdd, low, level_weights, suffix_gap, memo)
-    val_high = get_max_weight_dp(bdd, high, level_weights, suffix_gap, memo)
-
-    # 5. Calculate results for this node
-    # Option 1: Go Low (var=0) + Gap Gain
-    res_low = -float("inf")
-    if val_low != -float("inf"):
-        res_low = val_low + gain_gap_low
-
-    # Option 2: Go High (var=1) + Weight of u + Gap Gain
-    res_high = -float("inf")
-    if val_high != -float("inf"):
-        w_u = level_weights[lvl]
-        res_high = val_high + w_u + gain_gap_high
-
-    res = max(res_low, res_high)
-    memo[u] = res
-    return res
-
-
-def extract_best_solutions(
-    bdd, u, level_weights, suffix_gap, memo, path: Dict[str, int]
-) -> List[Dict[str, int]]:
-    """
-    Reconstructs optimal paths based on the DP memo table.
-    """
-    if u == 0:
-        return []
-    if u == 1:
-        return [path.copy()]
-
-    lvl, low, high = bdd.nodes[u]
-    var_name = bdd.level2var[lvl]
-
-    # Children levels
-    lvl_low = bdd.nodes[low][0]
-    lvl_high = bdd.nodes[high][0]
-
-    target = memo[u]  # The score we must achieve from here
-    results = []
-
-    # --- Try Low Branch ---
-    val_low = 0 if low == 1 else memo.get(low, -float("inf"))
-
-    if val_low != -float("inf"):
-        gain_gap = suffix_gap[lvl + 1] - suffix_gap[lvl_low]
-        if (val_low + gain_gap) == target:
-            path[var_name] = 0
-            results.extend(
-                extract_best_solutions(bdd, low, level_weights, suffix_gap, memo, path)
-            )
-            del path[var_name]
-
-    # --- Try High Branch ---
-    val_high = 0 if high == 1 else memo.get(high, -float("inf"))
-
-    if val_high != -float("inf"):
-        w_u = level_weights[lvl]
-        gain_gap = suffix_gap[lvl + 1] - suffix_gap[lvl_high]
-        if (val_high + w_u + gain_gap) == target:
-            path[var_name] = 1
-            results.extend(
-                extract_best_solutions(bdd, high, level_weights, suffix_gap, memo, path)
-            )
-            del path[var_name]
-
-    return results
-
-
 def solve_optimization_symbolic(
-    bdd_mgr: BDD, reached_node: int, place_weights: Dict[str, int], net: PetriNet
+    bdd_mgr_adapter, reached_node, place_weights: Dict[str, int], net: PetriNet
 ) -> Tuple[int, List[Dict[str, int]], float]:
+    """
+    Solves optimization by EXHAUSTIVELY iterating over all satisfying assignments
+    in the BDD (Reach(M0)).
+    
+    This is conceptually similar to the explicit approach but retrieves markings
+    from the BDD structure using the library's iterator.
+    """
     start_time = time.perf_counter()
 
-    # 1. Prepare Weight Arrays for O(1) access
-    # BDD variables are interleaved (x_0, xp_0, x_1...).
-    # We map 'x_p' levels to weights, 'xp_p' levels to 0.
-    limit = len(bdd_mgr.var2level)
-    level_weights = [0] * limit
+    # Unwrap the 'dd' object from the adapter
+    bdd = bdd_mgr_adapter.bdd
 
-    # Map variable names to levels and fill weights
-    for var, lvl in bdd_mgr.var2level.items():
-        if var.startswith("x_") and not var.startswith("xp_"):
-            pid = var[2:]
-            p_name = net.places[pid].name
-            w = place_weights.get(p_name, 0)
-            level_weights[lvl] = w
+    # 1. Reconstruct Variable Order
+    # We need to know which BDD variable corresponds to which place to apply weights.
+    # The encoding used: "x_{pid}" for current state.
+    place_order, _ = build_place_index(net)
+    
+    # Identify the "care variables" (current state variables)
+    # We must tell pick_iter to only care about these, effectively projecting out 'next' vars
+    cur_vars = []
+    var_to_weight = {}
 
-    # 2. Build Suffix Sums for Gap Calculation
-    suffix_gap = [0] * (limit + 1)
-    current_sum = 0
-    for i in range(limit - 1, -1, -1):
-        w = max(0, level_weights[i])
-        current_sum += w
-        suffix_gap[i] = current_sum
+    for pid in place_order:
+        var_name = f"x_{pid}"
+        cur_vars.append(var_name)
+        
+        # Map variable name directly to its weight
+        p_name = net.places[pid].name
+        w = place_weights.get(p_name, 0)
+        var_to_weight[var_name] = w
 
-    # 3. Handle Root Gap (Optimization)
-    root_lvl = bdd_mgr.nodes[reached_node][0]
-    prefix_gain = suffix_gap[0] - suffix_gap[root_lvl]
-
-    # 4. Run DP
-    memo_scores = {}
-    dp_score = get_max_weight_dp(
-        bdd_mgr, reached_node, level_weights, suffix_gap, memo_scores
-    )
-    max_score = dp_score + prefix_gain
-
-    # 5. Extract Solutions
-    partial_solutions = extract_best_solutions(
-        bdd_mgr, reached_node, level_weights, suffix_gap, memo_scores, {}
-    )
-
-    # 6. Finalize Solutions (Fill in Don't Cares)
-    final_solutions = []
-    vars_with_weight = []
-    for var, lvl in bdd_mgr.var2level.items():
-        if level_weights[lvl] > 0:
-            vars_with_weight.append(var)
-
-    for sol in partial_solutions:
-        full_sol = sol.copy()
-        for var in vars_with_weight:
-            if var not in full_sol:
-                full_sol[var] = 1
-        final_solutions.append(full_sol)
+    # 2. Iterate Exhaustively
+    # bdd.pick_iter yields a dictionary for every satisfying assignment.
+    # e.g., {'x_p1': 1, 'x_p2': 0, ...}
+    
+    max_score = -float("inf")
+    best_solutions = []
+    
+    # We iterate over assignments restricted to cur_vars.
+    # If the BDD is huge, this loop is the bottleneck (Enumeration Complexity).
+    for assignment in bdd.pick_iter(reached_node, care_vars=cur_vars):
+        current_score = 0
+        
+        # Calculate score c^T * M
+        for var_name, val in assignment.items():
+            if val: # If token is present (True or 1)
+                current_score += var_to_weight.get(var_name, 0)
+        
+        # Check Max
+        if current_score > max_score:
+            max_score = current_score
+            best_solutions = [assignment]
+        elif current_score == max_score:
+            best_solutions.append(assignment)
 
     end_time = time.perf_counter()
-    return max_score, final_solutions, end_time - start_time
+    
+    # If no reachable markings (shouldn't happen for valid nets), handle gracefully
+    if max_score == -float("inf"):
+        max_score = 0
+
+    return max_score, best_solutions, end_time - start_time
 
 
 # =============================================================
@@ -328,7 +230,7 @@ def solve_optimization_symbolic(
 # =============================================================
 def main():
     parser = argparse.ArgumentParser(
-        description="Task 5: Optimization over Reachability"
+        description="Task 5: Optimization over Reachability (dd Library - Exhaustive)"
     )
     parser.add_argument(
         "--model",
@@ -366,6 +268,7 @@ def main():
 
     # --- 3. Symbolic Search ---
     print(f"\n{Color.YELLOW}--- 3. Running Symbolic Search ---{Color.RESET}")
+    # run_symbolic_search returns (cnt, time, mem, reached_node, bdd_adapter)
     bdd_cnt, _, _, bdd_S, bdd_mgr = run_symbolic_search(net)
     print(f"   Symbolic found {bdd_cnt} reachable markings.")
 
@@ -381,7 +284,7 @@ def main():
 
     # --- 5. Symbolic Opt ---
     print(
-        f"\n{Color.CYAN}--- 5. Running Symbolic Optimization (DP Method) ---{Color.RESET}"
+        f"\n{Color.CYAN}--- 5. Running Symbolic Optimization (Exhaustive) ---{Color.RESET}"
     )
     opt_sym_score, opt_sym_solutions, opt_sym_time = solve_optimization_symbolic(
         bdd_mgr, bdd_S, weights, net
@@ -402,17 +305,23 @@ def main():
                 f"⚠️ WARNING: Counts differ (Exp={len(opt_exp_markings)}, Sym={len(opt_sym_solutions)})"
             )
 
-        # if len(opt_sym_solutions) > 0 and len(opt_sym_solutions) < 10:
-        print("\n--- Best Markings (Symbolic) ---")
+        print("\n--- Best Markings ---")
         groups = auto_group_places(net)
-        for i, sol in enumerate(opt_sym_solutions):
+
+        # Limit print to 10
+        for i, sol in enumerate(opt_sym_solutions[:10]):
             vec = []
             for pid in place_order:
                 var = f"x_{pid}"
-                vec.append(sol.get(var, 0))
+                # Get value from dict, default to 0 (False)
+                val = 1 if sol.get(var) else 0
+                vec.append(val)
             print(f"{Color.YELLOW}Option {i + 1}:{Color.RESET}")
             print(pretty_marking_vec(tuple(vec), net, place_order, groups))
             print("-" * 40)
+        if len(opt_sym_solutions) > 10:
+            print(f"... and {len(opt_sym_solutions) - 10} more.")
+
     else:
         print(f"❌ FAIL: Mismatch! Explicit={opt_exp_score}, Symbolic={opt_sym_score}")
 
