@@ -18,7 +18,7 @@ try:
     )
 
     # Import symbolic search engine
-    from symbolic_computation_BDD import BDD, run_symbolic_search_pure
+    from symbolic_computation_BDD import BDD, run_symbolic_search
 
 except ImportError as e:
     print(f"Import Error: {e}")
@@ -366,7 +366,7 @@ def main():
 
     # --- 3. Symbolic Search ---
     print(f"\n{Color.YELLOW}--- 3. Running Symbolic Search ---{Color.RESET}")
-    bdd_cnt, _, _, bdd_S, bdd_mgr = run_symbolic_search_pure(net)
+    bdd_cnt, _, _, bdd_S, bdd_mgr = run_symbolic_search(net)
     print(f"   Symbolic found {bdd_cnt} reachable markings.")
 
     # --- 4. Explicit Opt ---
